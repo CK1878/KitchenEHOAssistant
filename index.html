@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Cake Forge - Advanced Kitchen Hub</title>
+    <style>
+        :root {
+            --bg-dark: #121212;
+            --surface: #1e1e1e;
+            --surface-accent: #2a2a2a;
+            --text-main: #ffffff;
+            --text-muted: #aaaaaa;
+            --brand-green: #00b0ff; 
+            --alert-amber: #ff9100;
+            --alert-red: #ff3d00;
+            --success: #00e676;
+            --border: #383838;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            height: 100vh;
+            display: grid;
+            grid-template-rows: 70px 1fr;
+            overflow: hidden;
+            padding: 10px;
+            gap: 10px;
+        }
+
+        header {
+            background-color: var(--surface);
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            border-bottom: 2px solid var(--surface-accent);
+        }
+
+        .brand h1 { font-size: 1.4rem; color: var(--brand-green); letter-spacing: 1px; }
+        .brand p { font-size: 0.75rem; color: var(--text-muted); }
+        #clock-container { text-align: right; }
+        #clock { font-size: 1.8rem; font-weight: bold; font-variant-numeric: tabular-nums; }
+        #date { font-size: 0.8rem; color: var(--text-muted); }
+
+        /* MULTI-PANEL VIEW LAYOUT */
+        main {
+            display: grid;
+            grid-template-columns: 1fr 1.1fr;
+            grid-template-rows: 1.2fr 1fr;
+            gap: 10px;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .panel {
+            background-color: var(--surface);
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        h2 { font-size: 1.1rem; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .scrollable {
+            overflow-y: auto;
+            flex-grow: 1;
+            padding-right: 5px;
+        }
+
+        /* TIMERS & ALERTS MODULE */
+        .timer-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .timer-card {
+            background: var(--surface-accent);
+            padding: 12px;
+            border-radius: 6px;
+            border-left: 4px solid var(--text-muted);
+            position: relative;
+        }
+
+        .timer-card.active { border-left-color: var(--brand-green); }
+        .timer-card.alarm { 
+            border-left-color: var(--alert-red); 
+            animation: flash-red 1s infinite alternate;
+        }
+
+        @keyframes flash-red {
+            from { background-color: var(--surface-accent); }
+            to { background-color: rgba(255, 61, 0, 0.2); }
+        }
+
+        .timer-title { font-weight: bold; font-size: 0.9rem; }
+        .timer-time { font-size: 1.4rem; font-weight: bold; font-variant-numeric: tabular-nums; margin: 4px 0; }
+        
+        .timer-controls button {
+            background: #333; color: white; border: none; padding: 4px 8px;
+            font-size: 0.75rem; border-radius: 3px; cursor: pointer; margin-right: 4px;
+        }
+
+        /* INTERACTIVE SPREADSHEET LEDGER */
+        .spreadsheet-container {
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+        }
+
+        table.ledger {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            text-align: left;
+        }
+
+        table.ledger th {
+            background-color: #252525;
+            color: var(--text-main);
+            padding: 8px;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            border-bottom: 2px solid var(--border);
+            border-right: 1px solid var(--border);
+        }
+
+        table.ledger td {
+            padding: 8px;
+            border-bottom: 1px solid var(--border);
+            border-right: 1px solid var(--border);
+            background-color: var(--surface);
+            -webkit-user-select: text;
+            user-select: text;
+        }
+
+        table.ledger tr:nth-child(even) td { background-color: #222; }
+        
+        table.ledger td[contenteditable="true"]:focus {
+            background-color: #2d3d4d;
+            outline: 1px solid var(--brand-green);
+        }
+
+        .expired-row td {
+            background-color: rgba(255, 61, 0, 0.15) !important;
+            color: #ff8a80;
+        }
+
+        /* TEMPERATURE & CHECKLIST MODULE LINKS */
+        .temp-row {
+            background: var(--surface-accent); padding: 10px 15px;
+            border-radius: 6px; margin-bottom: 10px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        .temp-controls { display: flex; align-items: center; gap: 10px; }
+        .btn-temp {
+            background: #333; color: white; border: none; width: 35px; height: 35px;
+            border-radius: 50%; font-size: 1.2rem; cursor: pointer;
+        }
+        .temp-display { font-size: 1.4rem; font-weight: bold; width: 70px; text-align: center; }
+
+        .deviation-panel {
+            background-color: rgba(255, 145, 0, 0.1); border: 1px solid var(--alert-amber);
+            border-radius: 6px; padding: 10px; margin-bottom: 10px; display: none;
+        }
+        .deviation-panel textarea {
+            width: 100%; background: #121212; border: 1px solid var(--border);
+            color: white; padding: 8px; border-radius: 4px; resize: none; font-size: 0.85rem;
+        }
+
+        .checklist-item {
+            display: flex; align-items: center; padding: 10px; background: var(--surface-accent);
+            margin-bottom: 6px; border-radius: 6px; cursor: pointer;
+        }
+        .checklist-item.checked { border-left: 4px solid var(--success); opacity: 0.6; }
+        .checkbox-mock { width: 20px; height: 20px; border: 2px solid #555; border-radius: 4px; margin-right: 12px; display: flex; align-items: center; justify-content: center; font-weight: bold;}
+        .checklist-item.checked .checkbox-mock { border-color: var(--success); background-color: var(--success); color: black; }
+        .checklist-item.checked .checkbox-mock::after { content: "✓"; font-size: 0.8rem; }
+        .task-text { font-size: 0.85rem; flex-grow: 1; }
+        .timestamp { font-size: 0.75rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+
+        .btn-action {
+            background-color: var(--brand-green); color: #000; border: none;
+            padding: 8px 16px; font-weight: bold; border-radius: 4px; cursor: pointer; font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand">
+            <h1>THE CAKE FORGE</h1>
+            <p>Integrated HACCP Kitchen Console & Automation Ledger</p>
+        </div>
+        <div id="clock-container">
+            <div id="clock">00:00:00</div>
+            <div id="date">Loading...</div>
+        </div>
+    </header>
+
+    <main>
+        <section class="panel">
+            <div class="panel-header">
+                <h2>Cold Holding Records</h2>
+                <span id="next-fridge-check" style="font-size:0.75rem; color:var(--alert-amber);">Next Routine Check Required: --:--</span>
+            </div>
+            <div class="scrollable">
+                <div class="temp-row">
+                    <div>
+                        <h4 style="font-size:0.95rem;">Dedicated Business Fridge</h4>
+                        <p style="font-size:0.75rem; color:var(--text-muted);">Target: 0.0°C to 5.0°C</p>
+                    </div>
+                    <div class="temp-controls">
+                        <button class="btn-temp" onclick="adjustTemp('fridge', -0.5)">-</button>
+                        <div class="temp-display" id="fridge-val">4.0°C</div>
+                        <button class="btn-temp" onclick="adjustTemp('fridge', 0.5)">+</button>
+                    </div>
+                </div>
+                <div class="deviation-panel" id="fridge-deviation">
+                    <p style="font-size:0.8rem; color:var(--alert-amber); margin-bottom:5px;">⚠️ CRITICAL COLD HOLDING DEVIATION DETECTED (&gt;5.0°C)</p>
+                    <textarea id="fridge-action" placeholder="Log clinical remediation steps executed..."></textarea>
+                </div>
+
+                <div class="temp-row">
+                    <div>
+                        <h4 style="font-size:0.95rem;">Dedicated Business Freezer</h4>
+                        <p style="font-size:0.75rem; color:var(--text-muted);">Target: Below -18.0°C</p>
+                    </div>
+                    <div class="temp-controls">
+                        <button class="btn-temp" onclick="adjustTemp('freezer', -1)">-</button>
+                        <div class="temp-display" id="freezer-val">-18°C</div>
+                        <button class="btn-temp" onclick="adjustTemp('freezer', 1)">+</button>
+                    </div>
+                </div>
+                <div class="deviation-panel" id="freezer-deviation" style="background-color:rgba(255,61,0,0.1); border-color:var(--alert-red);">
+                    <p style="font-size:0.8rem; color:var(--alert-red); margin-bottom:5px;">🚨 FREEZER CRITICAL COMPLIANCE BREACH (&gt;-15°C)</p>
+                    <textarea id="freezer-action" placeholder="Log deep freeze stabilization response actions taken..."></textarea>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="panel-header">
+                <h2>Dynamic Cleaning & Safety Tasks</h2>
+                <span id="current-day-label" style="font-size:0.8rem; color:var(--brand-green); font-weight:bold;">---</span>
+            </div>
+            <div class="scrollable" id="checklist-container">
+                </div>
+        </section>
+
+        <section class="panel">
+            <div class="panel-header">
+                <h2>Interval Timers & Alerts</h2>
+            </div>
+            <div class="scrollable">
+                <div class="timer-grid">
+                    <div class="timer-card" id="timer-fridge">
+                        <div class="timer-title">Fridge Temp Audit</div>
+                        <div class="timer-time" id="time-fridge">12:00:00</div>
+                        <div class="timer-controls">
+                            <button onclick="resetRoutineTimer('fridge', 12 * 3600)">Reset (12h)</button>
+                        </div>
+                    </div>
+                    <div class="timer-card" id="timer-sanitize">
+                        <div class="timer-title">Surface Sanitization</div>
+                        <div class="timer-time" id="time-sanitize">02:00:00</div>
+                        <div class="timer-controls">
+                            <button onclick="resetRoutineTimer('sanitize', 2 * 3600)">Reset (2h)</button>
+                        </div>
+                    </div>
+                    <div class="timer-card" id="timer-bake">
+                        <div class="timer-title">Active Oven/Bake Line</div>
+                        <div class="timer-time" id="time-bake">00:45:00</div>
+                        <div class="timer-controls">
+                            <button onclick="adjustBakeTimer(5)">+5m</button>
+                            <button onclick="toggleBakeTimer()" id="btn-bake-toggle">Start</button>
+                        </div>
+                    </div>
+                    <div class="timer-card" id="timer-waste">
+                        <div class="timer-title">Waste Clear & Bin Pull</div>
+                        <div class="timer-time" id="time-waste">04:00:00</div>
+                        <div class="timer-controls">
+                            <button onclick="resetRoutineTimer('waste', 4 * 3600)">Reset (4h)</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="panel-header">
+                <h2>Product Traceability & Longevity Spreadsheet</h2>
+                <button class="btn-action" onclick="addNewProductRow()">+ Add Batch Row</button>
+            </div>
+            <div class="spreadsheet-container">
+                <table class="ledger" id="ledger-table">
+                    <thead>
+                        <tr>
+                            <th>Production Date</th>
+                            <th>Product / Batch Description</th>
+                            <th>Ingredients Trace Code</th>
+                            <th>Statutory Allergens</th>
+                            <th>Use-By / Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ledger-body">
+                        </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Audio Notification Engine using pure mathematical synthesis oscillators (Zero file assets required)
+        function playAlarmSound(frequency = 660, duration = 0.15) {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(frequency, ctx.currentTime);
+                gain.gain.setValueAtTime(0.2, ctx.currentTime);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + duration);
+            } catch(e) { console.log("Audio contexts blocked or uninitialized."); }
+        }
+
+        // Global System Architecture State Vector
+        let state = {
+            fridgeTemp: 4.0, freezerTemp: -18,
+            fridgeAction: "", freezerAction: "",
+            completedTasks: {},
+            timers: {
+                fridge: 12 * 3600, sanitize: 2 * 3600, waste: 4 * 3600, bake: 45 * 60
+            },
+            bakeTimerRunning: false,
+            products: [
+                { id: 1, date: "2026-07-10", desc: "Dark Chocolate Mint Ganache Truffles", trace: "ALDI-B22 / CALLE-70", allergens: "Milk, Soy", useBy: "2026-07-24" },
+                { id: 2, date: "2026-07-11", desc: "Classic Vanilla Sponge Layer Base", trace: "EGG-SURY09 / MILK-SMC", allergens: "Eggs, Milk, Wheat", useBy: "2026-07-14" }
+            ]
+        };
+
+        const cleaningMatrix = {
+            "Monday": ["Sanitize primary ingredient storage shelves", "Verify structural integrity of extraction hood filters"],
+            "Tuesday": ["Deep clean chocolate tempering moulds", "Inspect floor drainage channels for debris accumulation"],
+            "Wednesday": ["De-scale primary wash station tap aerators", "Verify rotation matrices across dry stores"],
+            "Thursday": ["Thorough physical scrub of internal fridge shelving units", "Wipe down low-level wall structural splashbacks"],
+            "Friday": ["Deep wash all mixing paddles and high-torque whisk units", "Clear and sanitize waste collection container housing"],
+            "Saturday": ["Complete deep clear of oven internal floor panels", "Verify seals on business fridge-freezer systems"],
+            "Sunday": ["Flush wash basins with structural descaler line", "Perform comprehensive physical environment insect/pest check"]
+        };
+
+        // Real-Time System Orchestration Core Loop
+        function heartbeat() {
+            const now = new Date();
+            document.getElementById('clock').textContent = now.toTimeString().split(' ')[0];
+            
+            const dayOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('date').textContent = now.toLocaleDateString('en-GB', dayOptions);
+            
+            const currentDayString = now.toLocaleDateString('en-GB', { weekday: 'long' });
+            if (document.getElementById('current-day-label').textContent !== currentDayString) {
+                document.getElementById('current-day-label').textContent = currentDayString;
+                renderChecklist(currentDayString);
+            }
+
+            // Decrement routine intervals
+            manageIntervalTimer('fridge', 'time-fridge');
+            manageIntervalTimer('sanitize', 'time-sanitize');
+            manageIntervalTimer('waste', 'time-waste');
+
+            if (state.bakeTimerRunning) {
+                manageIntervalTimer('bake', 'time-bake', true);
+            }
+
+            evaluateProductLifespans();
+        }
+
+        function manageIntervalTimer(key, elementId, stopAtZero = false) {
+            if (state.timers[key] > 0) {
+                state.timers[key]--;
+                document.getElementById(elementId).textContent = formatSeconds(state.timers[key]);
+                document.getElementById(`timer-${key}`).classList.remove('alarm', 'active');
+                if (state.timers[key] < 300) document.getElementById(`timer-${key}`).classList.add('active');
+            } else {
+                document.getElementById(elementId).textContent = "00:00:00";
+                document.getElementById(`timer-${key}`).classList.add('alarm');
+                if (Math.floor(Date.now() / 1000) % 2 === 0) playAlarmSound(key === 'bake' ? 880 : 540, 0.1);
+                if (stopAtZero && key === 'bake') state.bakeTimerRunning = false;
+            }
+        }
+
+        function formatSeconds(totalSeconds) {
+            const hrs = Math.floor(totalSeconds / 3600).toString().padStart(2, '0');
+            const mins = Math.floor((totalSeconds % 3600) / 60).toString().padStart(2, '0');
+            const secs = (totalSeconds % 60).toString().padStart(2, '0');
+            return `${hrs}:${mins}:${secs}`;
+        }
+
+        function resetRoutineTimer(key, seconds) {
+            state.timers[key] = seconds;
+            document.getElementById(`timer-${key}`).classList.remove('alarm', 'active');
+            saveToDisk();
+        }
+
+        function toggleBakeTimer() {
+            state.bakeTimerRunning = !state.bakeTimerRunning;
+            document.getElementById('btn-bake-toggle').textContent = state.bakeTimerRunning ? "Pause" : "Start";
+        }
+
+        function adjustBakeTimer(minutes) {
+            state.timers.bake += (minutes * 60);
+            document.getElementById('time-bake').textContent = formatSeconds(state.timers.bake);
+        }
+
+        // Checklist Rendering Engine
+        function renderChecklist(day) {
+            const container = document.getElementById('checklist-container');
+            let html = `<h4 style="font-size:0.8rem; color:var(--brand-green); margin: 5px 0;">STANDARD PRE-SESSION RUNS</h4>`;
+            
+            const defaults = [
+                { id: 'def-1', text: "Clear family items & domestic parameters out of production spaces." },
+                { id: 'def-2', text: "Verify absolute pet isolation from production zone boundaries." },
+                { id: 'def-3', text: "Disinfect all primary countertops with BS EN 1276 compliance sanitizer." }
+            ];
+
+            defaults.forEach(t => html += createChecklistItemHtml(t.id, t.text));
+            html +=
