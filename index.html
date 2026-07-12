@@ -44,7 +44,6 @@
             align-items: center;
             padding: 15px 20px;
             border-bottom: 2px solid var(--surface-accent);
-            flex-shrink: 0;
         }
 
         .brand h1 { font-size: 1.3rem; color: var(--brand-green); letter-spacing: 1px; }
@@ -81,12 +80,10 @@
             margin-bottom: 12px;
             padding-bottom: 8px;
             border-bottom: 1px solid var(--border);
-            flex-wrap: wrap;
             gap: 5px;
         }
 
         h2 { font-size: 1rem; text-transform: uppercase; letter-spacing: 0.5px; }
-        .scrollable { width: 100%; }
 
         /* TIMERS */
         .timer-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
@@ -133,4 +130,468 @@
         table.ledger td[contenteditable="true"]:focus { background-color: #2d3d4d; outline: 1px solid var(--brand-green); }
         .expired-row td { background-color: rgba(255, 61, 0, 0.15) !important; color: #ff8a80; }
 
-        .btn-action { background-color: var(--brand-green); color: #000; border: none; padding: 10px 16px
+        .btn-action { background-color: var(--brand-green); color: #000; border: none; padding: 10px 16px; font-weight: bold; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
+        .btn-secondary { background-color: #444; color: #fff; border: none; padding: 10px 16px; font-weight: bold; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
+
+        /* ADMIN OVERLAY */
+        #admin-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background-color: rgba(10, 10, 10, 0.95); z-index: 1000;
+            display: none; padding: 20px; overflow-y: auto;
+        }
+        .admin-modal {
+            background-color: var(--surface); max-width: 800px; margin: 20px auto;
+            border-radius: 8px; border: 1px solid var(--border); padding: 25px;
+        }
+        .admin-row {
+            display: flex; justify-content: space-between; align-items: center;
+            background: var(--surface-accent); padding: 12px; border-radius: 6px; margin-bottom: 10px;
+        }
+        .admin-matrix-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 15px; }
+        @media (min-width: 600px) { .admin-matrix-grid { grid-template-columns: repeat(2, 1fr); } }
+        .admin-matrix-card { background: var(--surface-accent); padding: 10px; border-radius: 6px; }
+        .admin-matrix-card label { font-size: 0.85rem; font-weight: bold; color: var(--brand-green); display: block; margin-bottom: 5px; }
+        .admin-matrix-card input { width: 100%; background: #121212; border: 1px solid var(--border); color: #fff; padding: 8px; border-radius: 4px; font-size: 0.85rem; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand">
+            <h1>THE CAKE FORGE</h1>
+            <p>Integrated HACCP Kitchen Console</p>
+        </div>
+        <div class="header-actions">
+            <button class="btn-secondary" onclick="openAdminModal()">⚙️ Admin Settings</button>
+            <div id="clock-container">
+                <div id="clock">00:00:00</div>
+                <div id="date">Loading...</div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <section class="panel">
+            <div class="panel-header">
+                <h2>Cold Holding Records</h2>
+            </div>
+            <div>
+                <div class="temp-row">
+                    <div>
+                        <h4 style="font-size:0.95rem;">Dedicated Business Fridge</h4>
+                        <p style="font-size:0.75rem; color:var(--text-muted);">Target: 0.0°C to 5.0°C</p>
+                    </div>
+                    <div class="temp-controls">
+                        <button class="btn-temp" onclick="adjustTemp('fridge', -0.5)">-</button>
+                        <div class="temp-display" id="fridge-val">4.0°C</div>
+                        <button class="btn-temp" onclick="adjustTemp('fridge', 0.5)">+</button>
+                    </div>
+                </div>
+                <div class="deviation-panel" id="fridge-deviation">
+                    <p style="font-size:0.8rem; color:var(--alert-amber); margin-bottom:5px;">⚠️ DEVIATION DETECTED (&gt;5.0°C)</p>
+                    <textarea id="fridge-action" placeholder="Log remediation steps..."></textarea>
+                </div>
+
+                <div class="temp-row">
+                    <div>
+                        <h4 style="font-size:0.95rem;">Dedicated Business Freezer</h4>
+                        <p style="font-size:0.75rem; color:var(--text-muted);">Target: Below -18.0°C</p>
+                    </div>
+                    <div class="temp-controls">
+                        <button class="btn-temp" onclick="adjustTemp('freezer', -1)">-</button>
+                        <div class="temp-display" id="freezer-val">-18.0°C</div>
+                        <button class="btn-temp" onclick="adjustTemp('freezer', 1)">+</button>
+                    </div>
+                </div>
+                <div class="deviation-panel" id="freezer-deviation">
+                    <p style="font-size:0.8rem; color:var(--alert-red); margin-bottom:5px;">🚨 FREEZER BREACH (&gt;-15°C)</p>
+                    <textarea id="freezer-action" placeholder="Log remediation steps..."></textarea>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="panel-header">
+                <h2>Dynamic Tasks</h2>
+                <span id="current-day-label" style="font-size:0.8rem; color:var(--brand-green); font-weight:bold;">---</span>
+            </div>
+            <div id="checklist-container"></div>
+        </section>
+
+        <section class="panel">
+            <div class="panel-header">
+                <h2>Interval Timers & Alerts</h2>
+            </div>
+            <div class="timer-grid">
+                <div class="timer-card" id="timer-fridge">
+                    <div class="timer-title">Fridge Audit</div>
+                    <div class="timer-time" id="time-fridge">12:00:00</div>
+                    <div class="timer-controls"><button onclick="triggerRoutineReset('fridge')">Reset</button></div>
+                </div>
+                <div class="timer-card" id="timer-sanitize">
+                    <div class="timer-title">Sanitization</div>
+                    <div class="timer-time" id="time-sanitize">02:00:00</div>
+                    <div class="timer-controls"><button onclick="triggerRoutineReset('sanitize')">Reset</button></div>
+                </div>
+                <div class="timer-card" id="timer-bake">
+                    <div class="timer-title">Oven / Bake</div>
+                    <div class="timer-time" id="time-bake">00:45:00</div>
+                    <div class="timer-controls">
+                        <button onclick="adjustBakeTimer(5)">+5m</button>
+                        <button onclick="toggleBakeTimer()" id="btn-bake-toggle">Start</button>
+                    </div>
+                </div>
+                <div class="timer-card" id="timer-waste">
+                    <div class="timer-title">Bin Pull</div>
+                    <div class="timer-time" id="time-waste">04:00:00</div>
+                    <div class="timer-controls"><button onclick="triggerRoutineReset('waste')">Reset</button></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="panel-header">
+                <h2>Product Log Spreadsheet</h2>
+                <button class="btn-action" onclick="addNewProductRow()">+ Add Row</button>
+            </div>
+            <div class="spreadsheet-container">
+                <table class="ledger" id="ledger-table">
+                    <thead>
+                        <tr>
+                            <th>Production Date</th>
+                            <th>Product / Batch Description</th>
+                            <th>Ingredients Code</th>
+                            <th>Allergens</th>
+                            <th>Use-By Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ledger-body"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <div id="admin-overlay">
+        <div class="admin-modal">
+            <div class="panel-header">
+                <h2 style="color:var(--brand-green);">System Configuration Parameters</h2>
+                <button class="btn-secondary" onclick="closeAdminModal()">Close</button>
+            </div>
+            
+            <h3 style="font-size:0.9rem; margin:15px 0 10px 0; color:var(--text-muted); text-transform:uppercase;">1. Operational Timer Intervals (Hours)</h3>
+            <div class="admin-row">
+                <span>Fridge Temp Audit Interval:</span>
+                <div class="temp-controls">
+                    <button class="btn-temp" style="width:30px; height:30px; font-size:1rem;" onclick="adjustAdminConfigInterval('fridge', -1)">-</button>
+                    <span id="cfg-fridge-lbl" style="font-weight:bold; min-width:40px; text-align:center;">12h</span>
+                    <button class="btn-temp" style="width:30px; height:30px; font-size:1rem;" onclick="adjustAdminConfigInterval('fridge', 1)">+</button>
+                </div>
+            </div>
+            <div class="admin-row">
+                <span>Surface Sanitization Duty Cycle:</span>
+                <div class="temp-controls">
+                    <button class="btn-temp" style="width:30px; height:30px; font-size:1rem;" onclick="adjustAdminConfigInterval('sanitize', -1)">-</button>
+                    <span id="cfg-sanitize-lbl" style="font-weight:bold; min-width:40px; text-align:center;">2h</span>
+                    <button class="btn-temp" style="width:30px; height:30px; font-size:1rem;" onclick="adjustAdminConfigInterval('sanitize', 1)">+</button>
+                </div>
+            </div>
+            <div class="admin-row">
+                <span>Waste Clear & Bin Pull Duty Cycle:</span>
+                <div class="temp-controls">
+                    <button class="btn-temp" style="width:30px; height:30px; font-size:1rem;" onclick="adjustAdminConfigInterval('waste', -1)">-</button>
+                    <span id="cfg-waste-lbl" style="font-weight:bold; min-width:40px; text-align:center;">4h</span>
+                    <button class="btn-temp" style="width:30px; height:30px; font-size:1rem;" onclick="adjustAdminConfigInterval('waste', 1)">+</button>
+                </div>
+            </div>
+
+            <h3 style="font-size:0.9rem; margin:20px 0 5px 0; color:var(--text-muted); text-transform:uppercase;">2. Dynamic Deep-Cleaning Matrix Customization</h3>
+            <div class="admin-matrix-grid" id="admin-matrix-injector"></div>
+
+            <div style="margin-top:25px; text-align:right;">
+                <button class="btn-action" style="padding:12px 24px;" onclick="saveAndApplyAdminConfig()">Save & Apply Configuration</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function playAlarmSound(frequency = 660, duration = 0.15) {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(frequency, ctx.currentTime);
+                gain.gain.setValueAtTime(0.2, ctx.currentTime);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + duration);
+            } catch(e) { console.log(e); }
+        }
+
+        let state = {
+            fridgeTemp: 4.0, freezerTemp: -18,
+            fridgeAction: "", freezerAction: "",
+            completedTasks: {},
+            timers: { fridge: 12 * 3600, sanitize: 2 * 3600, waste: 4 * 3600, bake: 45 * 60 },
+            bakeTimerRunning: false,
+            config: {
+                intervals: { fridge: 12, sanitize: 2, waste: 4 },
+                cleaningMatrix: {
+                    "Monday": "Sanitize primary ingredient shelving units",
+                    "Tuesday": "Deep clean chocolate tempering moulds",
+                    "Wednesday": "De-scale primary wash station tap units",
+                    "Thursday": "Thorough physical scrub of fridge internal racks",
+                    "Friday": "Deep wash all mixing paddles and high-torque whisks",
+                    "Saturday": "Complete deep clear of oven internal panels",
+                    "Sunday": "Perform comprehensive physical environment pest check"
+                }
+            },
+            products: [
+                { id: 1, date: "2026-07-10", desc: "Chocolate Truffles", trace: "CALLE-70", allergens: "Milk, Soy", useBy: "2026-07-24" },
+                { id: 2, date: "2026-07-11", desc: "Vanilla Sponge Base", trace: "EGG-SURY09", allergens: "Eggs, Wheat", useBy: "2026-07-14" }
+            ]
+        };
+
+        function heartbeat() {
+            const now = new Date();
+            document.getElementById('clock').textContent = now.toTimeString().split(' ')[0];
+            document.getElementById('date').textContent = now.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            
+            const currentDayString = now.toLocaleDateString('en-GB', { weekday: 'long' });
+            if (document.getElementById('current-day-label').textContent !== currentDayString) {
+                document.getElementById('current-day-label').textContent = currentDayString;
+                renderChecklist(currentDayString);
+            }
+
+            manageIntervalTimer('fridge', 'time-fridge');
+            manageIntervalTimer('sanitize', 'time-sanitize');
+            manageIntervalTimer('waste', 'time-waste');
+            if (state.bakeTimerRunning) manageIntervalTimer('bake', 'time-bake', true);
+
+            evaluateProductLifespans();
+        }
+
+        function manageIntervalTimer(key, elementId, stopAtZero = false) {
+            if (state.timers[key] > 0) {
+                state.timers[key]--;
+                document.getElementById(elementId).textContent = formatSeconds(state.timers[key]);
+                document.getElementById(`timer-${key}`).classList.remove('alarm', 'active');
+                if (state.timers[key] < 300) document.getElementById(`timer-${key}`).classList.add('active');
+            } else {
+                document.getElementById(elementId).textContent = "00:00:00";
+                document.getElementById(`timer-${key}`).classList.add('alarm');
+                if (Math.floor(Date.now() / 1000) % 2 === 0) playAlarmSound(key === 'bake' ? 880 : 540, 0.1);
+                if (stopAtZero && key === 'bake') state.bakeTimerRunning = false;
+            }
+        }
+
+        function formatSeconds(totalSeconds) {
+            const hrs = Math.floor(totalSeconds / 3600).toString().padStart(2, '0');
+            const mins = Math.floor((totalSeconds % 3600) / 60).toString().padStart(2, '0');
+            const secs = (totalSeconds % 60).toString().padStart(2, '0');
+            return `${hrs}:${mins}:${secs}`;
+        }
+
+        function triggerRoutineReset(key) {
+            const runtimeTargetHours = state.config.intervals[key];
+            state.timers[key] = runtimeTargetHours * 3600;
+            document.getElementById(`timer-${key}`).classList.remove('alarm', 'active');
+            saveToDisk();
+        }
+
+        function toggleBakeTimer() {
+            state.bakeTimerRunning = !state.bakeTimerRunning;
+            document.getElementById('btn-bake-toggle').textContent = state.bakeTimerRunning ? "Pause" : "Start";
+        }
+
+        function adjustBakeTimer(minutes) {
+            state.timers.bake += (minutes * 60);
+            document.getElementById('time-bake').textContent = formatSeconds(state.timers.bake);
+        }
+
+        function renderChecklist(day) {
+            const container = document.getElementById('checklist-container');
+            if (!container) return;
+            
+            let html = `<h4 style="font-size:0.8rem; color:var(--brand-green); margin: 5px 0;">STANDARD PRE-SESSION RUNS</h4>`;
+            
+            const defaults = [
+                { id: 'def-1', text: "Clear family items out of production spaces." },
+                { id: 'def-2', text: "Verify absolute pet isolation from kitchen zone." },
+                { id: 'def-3', text: "Disinfect all primary countertops (BS EN 1276)." }
+            ];
+
+            defaults.forEach(t => html += createChecklistItemHtml(t.id, t.text));
+            html += `<h4 style="font-size:0.8rem; color:var(--alert-amber); margin: 12px 0 5px 0;">DEEP CLEANING LOGS FOR ${day.toUpperCase()}</h4>`;
+            
+            const targetedTaskText = state.config.cleaningMatrix[day] || "No deep clean routine mapped for today.";
+            html += createChecklistItemHtml(`day-${day}`, targetedTaskText);
+            
+            container.innerHTML = html;
+        }
+
+        function createChecklistItemHtml(id, text) {
+            const checkedClass = state.completedTasks[id] ? "checked" : "";
+            const ts = state.completedTasks[id] ? state.completedTasks[id] : "";
+            return `
+                <div class="checklist-item ${checkedClass}" onclick="toggleTaskState(this, '${id}')">
+                    <div class="checkbox-mock"></div>
+                    <div class="task-text">${text}</div>
+                    <div class="timestamp">${ts}</div>
+                </div>`;
+        }
+
+        function toggleTaskState(element, id) {
+            const isChecked = element.classList.toggle('checked');
+            const tsEl = element.querySelector('.timestamp');
+            if (isChecked) {
+                const ts = new Date().toTimeString().split(' ')[0].substring(0, 5);
+                tsEl.textContent = ts;
+                state.completedTasks[id] = ts;
+            } else {
+                tsEl.textContent = "";
+                delete state.completedTasks[id];
+            }
+            saveToDisk();
+        }
+
+        function adjustTemp(unit, amount) {
+            if(unit === 'fridge') {
+                state.fridgeTemp = parseFloat((state.fridgeTemp + amount).toFixed(1));
+                document.getElementById('fridge-val').textContent = `${state.fridgeTemp.toFixed(1)}°C`;
+                document.getElementById('fridge-deviation').style.display = state.fridgeTemp > 5.0 ? 'block' : 'none';
+            } else {
+                state.freezerTemp = parseFloat((state.freezerTemp + amount).toFixed(1));
+                document.getElementById('freezer-val').textContent = `${state.freezerTemp.toFixed(1)}°C`;
+                document.getElementById('freezer-deviation').style.display = state.freezerTemp > -15.0 ? 'block' : 'none';
+            }
+            saveToDisk();
+        }
+
+        function renderSpreadsheet() {
+            const tbody = document.getElementById('ledger-body');
+            if (!tbody) return;
+            tbody.innerHTML = "";
+            state.products.forEach(p => {
+                const row = document.createElement('tr');
+                row.setAttribute('data-id', p.id);
+                row.innerHTML = `
+                    <td contenteditable="true" onblur="updateLedgerCell(${p.id}, 'date', this)">${p.date}</td>
+                    <td contenteditable="true" onblur="updateLedgerCell(${p.id}, 'desc', this)">${p.desc}</td>
+                    <td contenteditable="true" onblur="updateLedgerCell(${p.id}, 'trace', this)">${p.trace}</td>
+                    <td contenteditable="true" onblur="updateLedgerCell(${p.id}, 'allergens', this)">${p.allergens}</td>
+                    <td contenteditable="true" onblur="updateLedgerCell(${p.id}, 'useBy', this)">${p.useBy}</td>
+                `;
+                tbody.appendChild(row);
+            });
+            evaluateProductLifespans();
+        }
+
+        function addNewProductRow() {
+            const todayISO = new Date().toISOString().split('T')[0];
+            const newRow = { id: Date.now(), date: todayISO, desc: "New Batch Run", trace: "Trace Codes", allergens: "None", useBy: todayISO };
+            state.products.unshift(newRow);
+            renderSpreadsheet();
+            saveToDisk();
+        }
+
+        function updateLedgerCell(id, fieldsKey, element) {
+            const item = state.products.find(p => p.id === id);
+            if (item) {
+                item[fieldsKey] = element.textContent.trim();
+                saveToDisk();
+                if (fieldsKey === 'useBy') evaluateProductLifespans();
+            }
+        }
+
+        function evaluateProductLifespans() {
+            const todayStr = new Date().toISOString().split('T')[0];
+            const tbody = document.getElementById('ledger-body');
+            if (!tbody) return;
+            const rows = tbody.querySelectorAll('tr');
+            rows.forEach(row => {
+                const id = parseInt(row.getAttribute('data-id'));
+                const prod = state.products.find(p => p.id === id);
+                if (prod && prod.useBy < todayStr) row.classList.add('expired-row');
+                else row.classList.remove('expired-row');
+            });
+        }
+
+        function openAdminModal() {
+            document.getElementById('cfg-fridge-lbl').textContent = `${state.config.intervals.fridge}h`;
+            document.getElementById('cfg-sanitize-lbl').textContent = `${state.config.intervals.sanitize}h`;
+            document.getElementById('cfg-waste-lbl').textContent = `${state.config.intervals.waste}h`;
+
+            const container = document.getElementById('admin-matrix-injector');
+            container.innerHTML = "";
+            Object.keys(state.config.cleaningMatrix).forEach(day => {
+                container.innerHTML += `
+                    <div class="admin-matrix-card">
+                        <label>${day}</label>
+                        <input type="text" id="cfg-matrix-${day}" value="${state.config.cleaningMatrix[day]}">
+                    </div>`;
+            });
+            document.getElementById('admin-overlay').style.display = 'block';
+        }
+
+        function closeAdminModal() { document.getElementById('admin-overlay').style.display = 'none'; }
+
+        function adjustAdminConfigInterval(key, amount) {
+            let target = state.config.intervals[key] + amount;
+            if (target < 1) target = 1;
+            if (target > 72) target = 72;
+            state.config.intervals[key] = target;
+            document.getElementById(`cfg-${key}-lbl`).textContent = `${target}h`;
+        }
+
+        function saveAndApplyAdminConfig() {
+            Object.keys(state.config.cleaningMatrix).forEach(day => {
+                const inputEl = document.getElementById(`cfg-matrix-${day}`);
+                if (inputEl) state.config.cleaningMatrix[day] = inputEl.value.trim();
+            });
+            
+            saveToDisk();
+            const currentDayString = new Date().toLocaleDateString('en-GB', { weekday: 'long' });
+            renderChecklist(currentDayString);
+            closeAdminModal();
+            playAlarmSound(880, 0.08);
+        }
+
+        function saveToDisk() { localStorage.setItem('forge_kitchen_v5_state', JSON.stringify(state)); }
+
+        function loadFromDisk() {
+            const stored = localStorage.getItem('forge_kitchen_v5_state');
+            if (stored) {
+                try {
+                    const parsed = JSON.parse(stored);
+                    if (parsed) state = Object.assign(state, parsed);
+                } catch(e) { console.log(e); }
+            }
+            
+            document.getElementById('fridge-val').textContent = `${state.fridgeTemp.toFixed(1)}°C`;
+            document.getElementById('freezer-val').textContent = `${state.freezerTemp.toFixed(1)}°C`;
+            document.getElementById('fridge-deviation').style.display = state.fridgeTemp > 5.0 ? 'block' : 'none';
+            document.getElementById('freezer-deviation').style.display = state.freezerTemp > -15.0 ? 'block' : 'none';
+            document.getElementById('fridge-action').value = state.fridgeAction || "";
+            document.getElementById('freezer-action').value = state.freezerAction || "";
+            
+            renderSpreadsheet();
+        }
+
+        window.onload = () => {
+            loadFromDisk();
+            
+            // Set up event listeners safely
+            const fAction = document.getElementById('fridge-action');
+            if (fAction) fAction.addEventListener('input', (e) => { state.fridgeAction = e.target.value; saveToDisk(); });
+            
+            const freezAction = document.getElementById('freezer-action');
+            if (freezAction) freezAction.addEventListener('input', (e) => { state.freezerAction = e.target.value; saveToDisk(); });
+
+            setInterval(heartbeat, 1000);
+            heartbeat();
+        };
+    </script>
+</body>
+</html>
