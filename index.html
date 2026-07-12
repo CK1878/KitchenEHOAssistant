@@ -152,6 +152,10 @@
         .admin-matrix-card { background: var(--surface-accent); padding: 10px; border-radius: 6px; }
         .admin-matrix-card label { font-size: 0.85rem; font-weight: bold; color: var(--brand-green); display: block; margin-bottom: 5px; }
         .admin-matrix-card input { width: 100%; background: #121212; border: 1px solid var(--border); color: #fff; padding: 8px; border-radius: 4px; font-size: 0.85rem; }
+        
+        .admin-textarea-block { margin-top: 15px; background: var(--surface-accent); padding: 15px; border-radius: 6px; }
+        .admin-textarea-block label { font-size: 0.9rem; font-weight: bold; color: var(--brand-green); display: block; margin-bottom: 5px; }
+        .admin-textarea-block textarea { width: 100%; height: 80px; background: #121212; border: 1px solid var(--border); color: #fff; padding: 10px; border-radius: 4px; resize: vertical; font-size: 0.85rem; }
     </style>
 </head>
 <body>
@@ -304,7 +308,12 @@
                 </div>
             </div>
 
-            <h3 style="font-size:0.9rem; margin:20px 0 5px 0; color:var(--text-muted); text-transform:uppercase;">2. Dynamic Deep-Cleaning Matrix Customization</h3>
+            <div class="admin-textarea-block">
+                <label>2. Standard Pre-Session Checklist (Separate tasks with semicolons ';')</label>
+                <textarea id="cfg-pre-session" placeholder="Task 1; Task 2; Task 3..."></textarea>
+            </div>
+
+            <h3 style="font-size:0.9rem; margin:20px 0 5px 0; color:var(--text-muted); text-transform:uppercase;">3. Dynamic Deep-Cleaning Matrix Customization</h3>
             <div class="admin-matrix-grid" id="admin-matrix-injector"></div>
 
             <div style="margin-top:25px; text-align:right;">
@@ -337,6 +346,12 @@
             bakeTimerRunning: false,
             config: {
                 intervals: { fridge: 12, sanitize: 2, waste: 4 },
+                preSessionChecklist: [
+                    "Clear family items out of production spaces.",
+                    "Verify absolute pet isolation from kitchen zone.",
+                    "Disinfect all primary countertops (BS EN 1276).",
+                    "Verify all clean mixing bowls and processing gear staged."
+                ],
                 cleaningMatrix: {
                     "Monday": "Sanitize primary ingredient shelving units",
                     "Tuesday": "Deep clean chocolate tempering moulds",
@@ -358,240 +373,4 @@
             document.getElementById('clock').textContent = now.toTimeString().split(' ')[0];
             document.getElementById('date').textContent = now.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
             
-            const currentDayString = now.toLocaleDateString('en-GB', { weekday: 'long' });
-            if (document.getElementById('current-day-label').textContent !== currentDayString) {
-                document.getElementById('current-day-label').textContent = currentDayString;
-                renderChecklist(currentDayString);
-            }
-
-            manageIntervalTimer('fridge', 'time-fridge');
-            manageIntervalTimer('sanitize', 'time-sanitize');
-            manageIntervalTimer('waste', 'time-waste');
-            if (state.bakeTimerRunning) manageIntervalTimer('bake', 'time-bake', true);
-
-            evaluateProductLifespans();
-        }
-
-        function manageIntervalTimer(key, elementId, stopAtZero = false) {
-            if (state.timers[key] > 0) {
-                state.timers[key]--;
-                document.getElementById(elementId).textContent = formatSeconds(state.timers[key]);
-                document.getElementById(`timer-${key}`).classList.remove('alarm', 'active');
-                if (state.timers[key] < 300) document.getElementById(`timer-${key}`).classList.add('active');
-            } else {
-                document.getElementById(elementId).textContent = "00:00:00";
-                document.getElementById(`timer-${key}`).classList.add('alarm');
-                if (Math.floor(Date.now() / 1000) % 2 === 0) playAlarmSound(key === 'bake' ? 880 : 540, 0.1);
-                if (stopAtZero && key === 'bake') state.bakeTimerRunning = false;
-            }
-        }
-
-        function formatSeconds(totalSeconds) {
-            const hrs = Math.floor(totalSeconds / 3600).toString().padStart(2, '0');
-            const mins = Math.floor((totalSeconds % 3600) / 60).toString().padStart(2, '0');
-            const secs = (totalSeconds % 60).toString().padStart(2, '0');
-            return `${hrs}:${mins}:${secs}`;
-        }
-
-        function triggerRoutineReset(key) {
-            const runtimeTargetHours = state.config.intervals[key];
-            state.timers[key] = runtimeTargetHours * 3600;
-            document.getElementById(`timer-${key}`).classList.remove('alarm', 'active');
-            saveToDisk();
-        }
-
-        function toggleBakeTimer() {
-            state.bakeTimerRunning = !state.bakeTimerRunning;
-            document.getElementById('btn-bake-toggle').textContent = state.bakeTimerRunning ? "Pause" : "Start";
-        }
-
-        function adjustBakeTimer(minutes) {
-            state.timers.bake += (minutes * 60);
-            document.getElementById('time-bake').textContent = formatSeconds(state.timers.bake);
-        }
-
-        function renderChecklist(day) {
-            const container = document.getElementById('checklist-container');
-            if (!container) return;
-            
-            let html = `<h4 style="font-size:0.8rem; color:var(--brand-green); margin: 5px 0;">STANDARD PRE-SESSION RUNS</h4>`;
-            
-            const defaults = [
-                { id: 'def-1', text: "Clear family items out of production spaces." },
-                { id: 'def-2', text: "Verify absolute pet isolation from kitchen zone." },
-                { id: 'def-3', text: "Disinfect all primary countertops (BS EN 1276)." }
-            ];
-
-            defaults.forEach(t => html += createChecklistItemHtml(t.id, t.text));
-            html += `<h4 style="font-size:0.8rem; color:var(--alert-amber); margin: 12px 0 5px 0;">DEEP CLEANING LOGS FOR ${day.toUpperCase()}</h4>`;
-            
-            const targetedTaskText = state.config.cleaningMatrix[day] || "No deep clean routine mapped for today.";
-            html += createChecklistItemHtml(`day-${day}`, targetedTaskText);
-            
-            container.innerHTML = html;
-        }
-
-        function createChecklistItemHtml(id, text) {
-            const checkedClass = state.completedTasks[id] ? "checked" : "";
-            const ts = state.completedTasks[id] ? state.completedTasks[id] : "";
-            return `
-                <div class="checklist-item ${checkedClass}" onclick="toggleTaskState(this, '${id}')">
-                    <div class="checkbox-mock"></div>
-                    <div class="task-text">${text}</div>
-                    <div class="timestamp">${ts}</div>
-                </div>`;
-        }
-
-        function toggleTaskState(element, id) {
-            const isChecked = element.classList.toggle('checked');
-            const tsEl = element.querySelector('.timestamp');
-            if (isChecked) {
-                const ts = new Date().toTimeString().split(' ')[0].substring(0, 5);
-                tsEl.textContent = ts;
-                state.completedTasks[id] = ts;
-            } else {
-                tsEl.textContent = "";
-                delete state.completedTasks[id];
-            }
-            saveToDisk();
-        }
-
-        function adjustTemp(unit, amount) {
-            if(unit === 'fridge') {
-                state.fridgeTemp = parseFloat((state.fridgeTemp + amount).toFixed(1));
-                document.getElementById('fridge-val').textContent = `${state.fridgeTemp.toFixed(1)}°C`;
-                document.getElementById('fridge-deviation').style.display = state.fridgeTemp > 5.0 ? 'block' : 'none';
-            } else {
-                state.freezerTemp = parseFloat((state.freezerTemp + amount).toFixed(1));
-                document.getElementById('freezer-val').textContent = `${state.freezerTemp.toFixed(1)}°C`;
-                document.getElementById('freezer-deviation').style.display = state.freezerTemp > -15.0 ? 'block' : 'none';
-            }
-            saveToDisk();
-        }
-
-        function renderSpreadsheet() {
-            const tbody = document.getElementById('ledger-body');
-            if (!tbody) return;
-            tbody.innerHTML = "";
-            state.products.forEach(p => {
-                const row = document.createElement('tr');
-                row.setAttribute('data-id', p.id);
-                row.innerHTML = `
-                    <td contenteditable="true" onblur="updateLedgerCell(${p.id}, 'date', this)">${p.date}</td>
-                    <td contenteditable="true" onblur="updateLedgerCell(${p.id}, 'desc', this)">${p.desc}</td>
-                    <td contenteditable="true" onblur="updateLedgerCell(${p.id}, 'trace', this)">${p.trace}</td>
-                    <td contenteditable="true" onblur="updateLedgerCell(${p.id}, 'allergens', this)">${p.allergens}</td>
-                    <td contenteditable="true" onblur="updateLedgerCell(${p.id}, 'useBy', this)">${p.useBy}</td>
-                `;
-                tbody.appendChild(row);
-            });
-            evaluateProductLifespans();
-        }
-
-        function addNewProductRow() {
-            const todayISO = new Date().toISOString().split('T')[0];
-            const newRow = { id: Date.now(), date: todayISO, desc: "New Batch Run", trace: "Trace Codes", allergens: "None", useBy: todayISO };
-            state.products.unshift(newRow);
-            renderSpreadsheet();
-            saveToDisk();
-        }
-
-        function updateLedgerCell(id, fieldsKey, element) {
-            const item = state.products.find(p => p.id === id);
-            if (item) {
-                item[fieldsKey] = element.textContent.trim();
-                saveToDisk();
-                if (fieldsKey === 'useBy') evaluateProductLifespans();
-            }
-        }
-
-        function evaluateProductLifespans() {
-            const todayStr = new Date().toISOString().split('T')[0];
-            const tbody = document.getElementById('ledger-body');
-            if (!tbody) return;
-            const rows = tbody.querySelectorAll('tr');
-            rows.forEach(row => {
-                const id = parseInt(row.getAttribute('data-id'));
-                const prod = state.products.find(p => p.id === id);
-                if (prod && prod.useBy < todayStr) row.classList.add('expired-row');
-                else row.classList.remove('expired-row');
-            });
-        }
-
-        function openAdminModal() {
-            document.getElementById('cfg-fridge-lbl').textContent = `${state.config.intervals.fridge}h`;
-            document.getElementById('cfg-sanitize-lbl').textContent = `${state.config.intervals.sanitize}h`;
-            document.getElementById('cfg-waste-lbl').textContent = `${state.config.intervals.waste}h`;
-
-            const container = document.getElementById('admin-matrix-injector');
-            container.innerHTML = "";
-            Object.keys(state.config.cleaningMatrix).forEach(day => {
-                container.innerHTML += `
-                    <div class="admin-matrix-card">
-                        <label>${day}</label>
-                        <input type="text" id="cfg-matrix-${day}" value="${state.config.cleaningMatrix[day]}">
-                    </div>`;
-            });
-            document.getElementById('admin-overlay').style.display = 'block';
-        }
-
-        function closeAdminModal() { document.getElementById('admin-overlay').style.display = 'none'; }
-
-        function adjustAdminConfigInterval(key, amount) {
-            let target = state.config.intervals[key] + amount;
-            if (target < 1) target = 1;
-            if (target > 72) target = 72;
-            state.config.intervals[key] = target;
-            document.getElementById(`cfg-${key}-lbl`).textContent = `${target}h`;
-        }
-
-        function saveAndApplyAdminConfig() {
-            Object.keys(state.config.cleaningMatrix).forEach(day => {
-                const inputEl = document.getElementById(`cfg-matrix-${day}`);
-                if (inputEl) state.config.cleaningMatrix[day] = inputEl.value.trim();
-            });
-            
-            saveToDisk();
-            const currentDayString = new Date().toLocaleDateString('en-GB', { weekday: 'long' });
-            renderChecklist(currentDayString);
-            closeAdminModal();
-            playAlarmSound(880, 0.08);
-        }
-
-        function saveToDisk() { localStorage.setItem('forge_kitchen_v5_state', JSON.stringify(state)); }
-
-        function loadFromDisk() {
-            const stored = localStorage.getItem('forge_kitchen_v5_state');
-            if (stored) {
-                try {
-                    const parsed = JSON.parse(stored);
-                    if (parsed) state = Object.assign(state, parsed);
-                } catch(e) { console.log(e); }
-            }
-            
-            document.getElementById('fridge-val').textContent = `${state.fridgeTemp.toFixed(1)}°C`;
-            document.getElementById('freezer-val').textContent = `${state.freezerTemp.toFixed(1)}°C`;
-            document.getElementById('fridge-deviation').style.display = state.fridgeTemp > 5.0 ? 'block' : 'none';
-            document.getElementById('freezer-deviation').style.display = state.freezerTemp > -15.0 ? 'block' : 'none';
-            document.getElementById('fridge-action').value = state.fridgeAction || "";
-            document.getElementById('freezer-action').value = state.freezerAction || "";
-            
-            renderSpreadsheet();
-        }
-
-        window.onload = () => {
-            loadFromDisk();
-            
-            // Set up event listeners safely
-            const fAction = document.getElementById('fridge-action');
-            if (fAction) fAction.addEventListener('input', (e) => { state.fridgeAction = e.target.value; saveToDisk(); });
-            
-            const freezAction = document.getElementById('freezer-action');
-            if (freezAction) freezAction.addEventListener('input', (e) => { state.freezerAction = e.target.value; saveToDisk(); });
-
-            setInterval(heartbeat, 1000);
-            heartbeat();
-        };
-    </script>
-</body>
-</html>
+            const currentDayString = now.toLocaleDateString('en-GB', { weekday: 'long
