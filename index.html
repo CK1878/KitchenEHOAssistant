@@ -313,7 +313,8 @@
 
         let state = {
             mode: "STANDARD",
-            fridgeTemp: 4.0, freezerTemp: -18.0,
+            fridgeTemp: 4.0, 
+            freezerTemp: -18.0,
             fridgeAction: "",
             completedTasks: {},
             customTasks: [],
@@ -324,10 +325,21 @@
             bakeTimerRunning: false,
             intervals: { fridge: 12, sanitize: 2, waste: 4 },
             preSessionChecklist: [
-                "Clear family items out of production spaces.",
-                "Verify absolute pet isolation from kitchen zone.",
-                "Disinfect primary countertops (BS EN 1276).",
-                "Verify all clean mixing bowls and gear staged."
+                "Clear family items and personal belongings out of production spaces.",
+                "Verify absolute pet isolation from kitchen and food storage zones.",
+                "Disinfect primary food contact surfaces & equipment (BS EN 1276).",
+                "Verify clean chef whites/apron put on & hair tied back/covered.",
+                "Handwashing sink stocked with warm water, anti-bacterial soap, & paper towels.",
+                "Fridge & freezer operating within target temp ranges (Fridge <5°C, Freezer <-18°C).",
+                "Verify clean mixing bowls, pans, and staging gear ready."
+            ],
+            closingChecklist: [
+                "All food covered, labeled, and dated before cold holding storage.",
+                "Sanitise all food contact surfaces, mixers, and touchpoints (BS EN 1276).",
+                "Empty food waste and take bin liner to external waste bin.",
+                "Sweep and mop kitchen floor.",
+                "Ensure all appliances (ovens, hobs, sugar lamps) are switched off.",
+                "Verify all daily temperature & allergen records are logged and saved."
             ]
         };
 
@@ -342,4 +354,326 @@
                 state.intervals = { fridge: 6, sanitize: 1, waste: 2 };
             } else if (newMode === 'WARM') {
                 document.getElementById('mode-warm').classList.add('active');
-                state.intervals = { fridge: 4, sanit
+                state.intervals = { fridge: 4, sanitize: 2, waste: 4 };
+            }
+            saveToDisk();
+            renderChecklist(new Date().toLocaleDateString('en-GB', { weekday: 'long' }));
+        }
+
+        function heartbeat() {
+            const now = new Date();
+            document.getElementById('clock').textContent = now.toTimeString().split(' ')[0];
+            const dateStr = now.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            document.getElementById('date').textContent = dateStr;
+            document.getElementById('print-date-str').textContent = `Log Generated: ${dateStr} at ${now.toTimeString().split(' ')[0]}`;
+            
+            const currentDayString = now.toLocaleDateString('en-GB', { weekday: 'long' });
+            if (document.getElementById('current-day-label').textContent !== currentDayString) {
+                document.getElementById('current-day-label').textContent = currentDayString;
+                renderChecklist(currentDayString);
+            }
+
+            manageTimer('fridge', 'time-fridge');
+            manageTimer('sanitize', 'time-sanitize');
+            manageTimer('waste', 'time-waste');
+            if (state.bakeTimerRunning) manageTimer('bake', 'time-bake', true);
+        }
+
+        function manageTimer(key, elementId, stopAtZero = false) {
+            if (state.timers[key] > 0) {
+                state.timers[key]--;
+                document.getElementById(elementId).textContent = formatSeconds(state.timers[key]);
+            } else if (stopAtZero) {
+                state.bakeTimerRunning = false;
+            }
+        }
+
+        function formatSeconds(s) {
+            const h = Math.floor(s / 3600).toString().padStart(2, '0');
+            const m = Math.floor((s % 3600) / 60).toString().padStart(2, '0');
+            const sec = (s % 60).toString().padStart(2, '0');
+            return `${h}:${m}:${sec}`;
+        }
+
+        function triggerRoutineReset(key) {
+            state.timers[key] = state.intervals[key] * 3600;
+            const now = new Date();
+            const timeStamp = now.toTimeString().split(' ')[0].substring(0, 5);
+            
+            const eventLabels = {
+                fridge: "Fridge Temp Audit Completed",
+                sanitize: "Sanitisation & Food Contact Surfaces Cleaned (BS EN 1276)",
+                waste: "Waste Removal & Bin Pull Completed"
+            };
+            
+            if (!state.routineAuditLog) state.routineAuditLog = [];
+            state.routineAuditLog.unshift({
+                time: timeStamp,
+                action: eventLabels[key] || `${key.toUpperCase()} Reset`
+            });
+
+            saveToDisk();
+            renderAuditLog();
+        }
+
+        function renderAuditLog() {
+            const tbody = document.getElementById('routine-log-body');
+            if (!tbody) return;
+            tbody.innerHTML = "";
+            
+            if (state.routineAuditLog && state.routineAuditLog.length > 0) {
+                state.routineAuditLog.forEach(log => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td><b>${log.time}</b></td>
+                            <td>${log.action}</td>
+                        </tr>`;
+                });
+            } else {
+                tbody.innerHTML = `<tr><td colspan="2" style="color:var(--text-muted);">No routine resets logged yet today.</td></tr>`;
+            }
+        }
+
+        function toggleBakeTimer() {
+            state.bakeTimerRunning = !state.bakeTimerRunning;
+            document.getElementById('btn-bake-toggle').textContent = state.bakeTimerRunning ? "Pause" : "Start";
+        }
+
+        function adjustBakeTimer(mins) {
+            state.timers.bake += mins * 60;
+            document.getElementById('time-bake').textContent = formatSeconds(state.timers.bake);
+        }
+
+        function adjustTemp(unit, amount) {
+            if (unit === 'fridge') {
+                state.fridgeTemp = parseFloat((state.fridgeTemp + amount).toFixed(1));
+                document.getElementById('fridge-val').textContent = `${state.fridgeTemp.toFixed(1)}°C`;
+                document.getElementById('fridge-deviation').style.display = state.fridgeTemp > 5.0 ? 'block' : 'none';
+            } else {
+                state.freezerTemp = parseFloat((state.freezerTemp + amount).toFixed(1));
+                document.getElementById('freezer-val').textContent = `${state.freezerTemp.toFixed(1)}°C`;
+            }
+            saveToDisk();
+        }
+
+        document.getElementById('barcode-input')?.addEventListener('input', (e) => {
+            const val = e.target.value.trim();
+            if (BARCODE_DB[val]) {
+                document.getElementById('pao-months').value = BARCODE_DB[val].defaultPaoMonths;
+            }
+        });
+
+        function processBarcodeEntry() {
+            const inputVal = document.getElementById('barcode-input').value.trim();
+            const paoMonths = parseInt(document.getElementById('pao-months').value) || 3;
+
+            if (!inputVal) return;
+
+            let itemName = inputVal;
+            let barcodeStr = "Manual";
+
+            if (BARCODE_DB[inputVal]) {
+                itemName = BARCODE_DB[inputVal].name;
+                barcodeStr = inputVal;
+            } else if (/^\d+$/.test(inputVal)) {
+                barcodeStr = inputVal;
+                itemName = `Scanned Barcode (${inputVal})`;
+            }
+
+            const openDate = new Date();
+            const expDate = new Date();
+            expDate.setMonth(expDate.getMonth() + paoMonths);
+
+            const record = {
+                id: 'ing-' + Date.now(),
+                openedOn: openDate.toLocaleDateString('en-GB'),
+                name: itemName,
+                barcode: barcodeStr,
+                expiresOn: expDate.toLocaleDateString('en-GB'),
+                expiryTimestamp: expDate.getTime()
+            };
+
+            if (!state.openedIngredients) state.openedIngredients = [];
+            state.openedIngredients.unshift(record);
+            document.getElementById('barcode-input').value = "";
+            
+            renderPantryLedger();
+            saveToDisk();
+        }
+
+        function renderPantryLedger() {
+            const tbody = document.getElementById('pantry-log-body');
+            if (!tbody) return;
+            tbody.innerHTML = "";
+
+            const now = new Date().getTime();
+
+            if (state.openedIngredients && state.openedIngredients.length > 0) {
+                state.openedIngredients.forEach(item => {
+                    const isExpired = now > item.expiryTimestamp;
+                    const statusBadge = isExpired 
+                        ? `<span style="color:var(--alert-red); font-weight:bold;">EXPIRED</span>` 
+                        : `<span style="color:var(--success); font-weight:bold;">OK (In Date)</span>`;
+
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${item.openedOn}</td>
+                            <td><b>${item.name}</b></td>
+                            <td><code>${item.barcode}</code></td>
+                            <td>${item.expiresOn}</td>
+                            <td>${statusBadge}</td>
+                        </tr>`;
+                });
+            } else {
+                tbody.innerHTML = `<tr><td colspan="5" style="color:var(--text-muted);">No opened goods logged today.</td></tr>`;
+            }
+        }
+
+        function logNewBatch() {
+            const item = document.getElementById('batch-item').value.trim();
+            const code = document.getElementById('batch-code').value.trim();
+            const temp = document.getElementById('batch-temp').value.trim();
+            const storage = document.getElementById('batch-storage').value;
+
+            if (!item) return;
+
+            const time = new Date().toTimeString().split(' ')[0].substring(0, 5);
+            if (!state.batches) state.batches = [];
+            state.batches.unshift({ time, item, code: code || 'N/A', temp: temp ? `${temp}°C` : 'N/A', storage });
+            
+            document.getElementById('batch-item').value = "";
+            document.getElementById('batch-code').value = "";
+            document.getElementById('batch-temp').value = "";
+
+            renderBatches();
+            saveToDisk();
+        }
+
+        function renderBatches() {
+            const tbody = document.getElementById('batch-log-body');
+            if (!tbody) return;
+            tbody.innerHTML = "";
+            if (state.batches && state.batches.length > 0) {
+                state.batches.forEach(b => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${b.time}</td>
+                            <td><b>${b.item}</b></td>
+                            <td>${b.code}</td>
+                            <td>${b.temp}</td>
+                            <td>${b.storage}</td>
+                        </tr>`;
+                });
+            } else {
+                tbody.innerHTML = `<tr><td colspan="5" style="color:var(--text-muted);">No cooked/made batches logged today.</td></tr>`;
+            }
+        }
+
+        function addCustomTask() {
+            const txt = document.getElementById('new-task-text').value.trim();
+            if (!txt) return;
+            state.customTasks.push({ id: 'custom-' + Date.now(), text: txt });
+            document.getElementById('new-task-text').value = "";
+            saveToDisk();
+            renderChecklist(new Date().toLocaleDateString('en-GB', { weekday: 'long' }));
+        }
+
+        function renderChecklist(day) {
+            const container = document.getElementById('checklist-container');
+            
+            // 1. OPENING CHECKS
+            let html = `<h4 style="font-size:0.8rem; color:var(--brand-green); margin: 5px 0 8px 0;">OPENING / PRE-SESSION CHECKS</h4>`;
+            state.preSessionChecklist.forEach((task, i) => {
+                html += createChecklistItemHtml(`presess-${i}`, task);
+            });
+
+            // 2. CLOSING CHECKS
+            if (state.closingChecklist && state.closingChecklist.length > 0) {
+                html += `<h4 style="font-size:0.8rem; color:var(--brand-green); margin: 15px 0 8px 0;">CLOSING / END-OF-DAY CHECKS</h4>`;
+                state.closingChecklist.forEach((task, i) => {
+                    html += createChecklistItemHtml(`closing-${i}`, task);
+                });
+            }
+
+            // 3. AD-HOC / CUSTOM CHECKS
+            if (state.customTasks && state.customTasks.length > 0) {
+                html += `<h4 style="font-size:0.8rem; color:var(--brand-green); margin: 15px 0 8px 0;">AD-HOC / SPECIAL CHECKS</h4>`;
+                state.customTasks.forEach(task => {
+                    html += createChecklistItemHtml(task.id, task.text);
+                });
+            }
+
+            container.innerHTML = html;
+        }
+
+        function createChecklistItemHtml(id, text) {
+            const checkedClass = state.completedTasks[id] ? "checked" : "";
+            const ts = state.completedTasks[id] ? state.completedTasks[id] : "";
+            return `
+                <div class="checklist-item ${checkedClass}" onclick="toggleTaskState(this, '${id}')">
+                    <div class="checkbox-mock"></div>
+                    <div class="task-text">${text}</div>
+                    <div class="timestamp">${ts}</div>
+                </div>`;
+        }
+
+        function toggleTaskState(element, id) {
+            const isChecked = element.classList.toggle('checked');
+            const tsEl = element.querySelector('.timestamp');
+            if (isChecked) {
+                const ts = new Date().toTimeString().split(' ')[0].substring(0, 5);
+                tsEl.textContent = ts;
+                state.completedTasks[id] = ts;
+            } else {
+                tsEl.textContent = "";
+                delete state.completedTasks[id];
+            }
+            saveToDisk();
+        }
+
+        function exportDailyPdf() {
+            saveToDisk();
+            window.print();
+        }
+
+        function saveToDisk() { 
+            localStorage.setItem('cake_forge_master_state', JSON.stringify(state)); 
+        }
+
+        function loadFromDisk() {
+            const stored = localStorage.getItem('cake_forge_master_state');
+            if (stored) {
+                try {
+                    const parsed = JSON.parse(stored);
+                    if (parsed) {
+                        // Merge safely so array defaults remain intact
+                        const defaultPre = state.preSessionChecklist;
+                        const defaultClose = state.closingChecklist;
+                        state = Object.assign(state, parsed);
+                        state.preSessionChecklist = defaultPre;
+                        state.closingChecklist = defaultClose;
+                    }
+                } catch(e) { console.error(e); }
+            }
+            
+            document.getElementById('fridge-val').textContent = `${state.fridgeTemp.toFixed(1)}°C`;
+            document.getElementById('freezer-val').textContent = `${state.freezerTemp.toFixed(1)}°C`;
+            document.getElementById('fridge-deviation').style.display = state.fridgeTemp > 5.0 ? 'block' : 'none';
+            if (state.fridgeAction) document.getElementById('fridge-action').value = state.fridgeAction;
+            
+            renderAuditLog();
+            renderBatches();
+            renderPantryLedger();
+            renderChecklist(new Date().toLocaleDateString('en-GB', { weekday: 'long' }));
+        }
+
+        window.onload = () => {
+            loadFromDisk();
+            const fAction = document.getElementById('fridge-action');
+            if (fAction) fAction.addEventListener('input', (e) => { state.fridgeAction = e.target.value; saveToDisk(); });
+            setInterval(heartbeat, 1000);
+            heartbeat();
+        };
+    </script>
+</body>
+</html>
