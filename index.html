@@ -18,32 +18,11 @@
             --border: #383838;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        }
-
-        body {
-            background-color: var(--bg-dark);
-            color: var(--text-main);
-            min-height: 100vh;
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            overflow-y: auto;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background-color: var(--bg-dark); color: var(--text-main); min-height: 100vh; padding: 10px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
 
         header {
-            background-color: var(--surface);
-            border-radius: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 20px;
-            border-bottom: 2px solid var(--surface-accent);
+            background-color: var(--surface); border-radius: 8px; display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 2px solid var(--surface-accent);
         }
 
         .brand h1 { font-size: 1.3rem; color: var(--brand-green); letter-spacing: 1px; }
@@ -53,36 +32,20 @@
         #clock { font-size: 1.6rem; font-weight: bold; font-variant-numeric: tabular-nums; }
         #date { font-size: 0.75rem; color: var(--text-muted); }
 
-        main {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 10px;
-            width: 100%;
+        /* MODE SELECTOR STRIP */
+        .mode-strip {
+            background: var(--surface); border-radius: 8px; border: 1px solid var(--border); padding: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
         }
+        .mode-title { font-size: 0.85rem; font-weight: bold; color: var(--brand-green); text-transform: uppercase; }
+        .mode-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+        .btn-mode { background: var(--surface-accent); color: var(--text-muted); border: 1px solid var(--border); padding: 8px 12px; font-size: 0.8rem; font-weight: bold; border-radius: 6px; cursor: pointer; }
+        .btn-mode.active { background: var(--brand-green); color: #000; border-color: var(--brand-green); }
 
-        @media (min-width: 768px) {
-            main { grid-template-columns: 1fr 1.1fr; }
-        }
+        main { display: grid; grid-template-columns: 1fr; gap: 10px; width: 100%; }
+        @media (min-width: 768px) { main { grid-template-columns: 1fr 1.1fr; } }
 
-        .panel {
-            background-color: var(--surface);
-            border-radius: 8px;
-            padding: 15px;
-            display: flex;
-            flex-direction: column;
-            border: 1px solid var(--border);
-        }
-
-        .panel-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid var(--border);
-            gap: 5px;
-        }
-
+        .panel { background-color: var(--surface); border-radius: 8px; padding: 15px; display: flex; flex-direction: column; border: 1px solid var(--border); }
+        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); gap: 5px; }
         h2 { font-size: 1rem; text-transform: uppercase; letter-spacing: 0.5px; }
 
         /* TIMERS */
@@ -90,20 +53,13 @@
         .timer-card { background: var(--surface-accent); padding: 12px; border-radius: 6px; border-left: 4px solid var(--text-muted); }
         .timer-card.active { border-left-color: var(--brand-green); }
         .timer-card.alarm { border-left-color: var(--alert-red); animation: flash-red 1s infinite alternate; }
-
-        @keyframes flash-red {
-            from { background-color: var(--surface-accent); }
-            to { background-color: rgba(255, 61, 0, 0.2); }
-        }
+        @keyframes flash-red { from { background-color: var(--surface-accent); } to { background-color: rgba(255, 61, 0, 0.2); } }
 
         .timer-title { font-weight: bold; font-size: 0.85rem; }
         .timer-time { font-size: 1.3rem; font-weight: bold; font-variant-numeric: tabular-nums; margin: 4px 0; }
-        .timer-controls button {
-            background: #333; color: white; border: none; padding: 6px 10px;
-            font-size: 0.75rem; border-radius: 4px; cursor: pointer; margin-right: 4px; margin-top: 4px;
-        }
+        .timer-controls button { background: #333; color: white; border: none; padding: 6px 10px; font-size: 0.75rem; border-radius: 4px; cursor: pointer; margin-right: 4px; margin-top: 4px; }
 
-        /* TEMPERATURE ROW */
+        /* COLD HOLDING */
         .temp-row { background: var(--surface-accent); padding: 12px 15px; border-radius: 6px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
         .temp-controls { display: flex; align-items: center; gap: 12px; }
         .btn-temp { background: #333; color: white; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 1.4rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
@@ -121,6 +77,12 @@
         .task-text { font-size: 0.85rem; flex-grow: 1; pointer-events: none; }
         .timestamp { font-size: 0.75rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
 
+        /* QUICK ADD TASK FORM */
+        .add-task-box { background: var(--surface-accent); padding: 10px; border-radius: 6px; margin-bottom: 12px; display: flex; flex-direction: column; gap: 8px; }
+        .add-task-row { display: flex; gap: 8px; }
+        .add-task-input { flex-grow: 1; background: #121212; border: 1px solid var(--border); color: #fff; padding: 8px; border-radius: 4px; font-size: 0.85rem; }
+        .add-task-select { background: #121212; border: 1px solid var(--border); color: #fff; padding: 8px; border-radius: 4px; font-size: 0.85rem; }
+
         /* LEDGER SPREADSHEET */
         .spreadsheet-container { width: 100%; overflow-x: auto; border: 1px solid var(--border); border-radius: 4px; margin-top: 5px; }
         table.ledger { width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left; min-width: 500px; }
@@ -134,25 +96,14 @@
         .btn-secondary { background-color: #444; color: #fff; border: none; padding: 10px 16px; font-weight: bold; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
 
         /* ADMIN OVERLAY */
-        #admin-overlay {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background-color: rgba(10, 10, 10, 0.95); z-index: 1000;
-            display: none; padding: 20px; overflow-y: auto;
-        }
-        .admin-modal {
-            background-color: var(--surface); max-width: 800px; margin: 20px auto;
-            border-radius: 8px; border: 1px solid var(--border); padding: 25px;
-        }
-        .admin-row {
-            display: flex; justify-content: space-between; align-items: center;
-            background: var(--surface-accent); padding: 12px; border-radius: 6px; margin-bottom: 10px;
-        }
+        #admin-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(10, 10, 10, 0.95); z-index: 1000; display: none; padding: 20px; overflow-y: auto; }
+        .admin-modal { background-color: var(--surface); max-width: 800px; margin: 20px auto; border-radius: 8px; border: 1px solid var(--border); padding: 25px; }
+        .admin-row { display: flex; justify-content: space-between; align-items: center; background: var(--surface-accent); padding: 12px; border-radius: 6px; margin-bottom: 10px; }
         .admin-matrix-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 15px; }
         @media (min-width: 600px) { .admin-matrix-grid { grid-template-columns: repeat(2, 1fr); } }
         .admin-matrix-card { background: var(--surface-accent); padding: 10px; border-radius: 6px; }
         .admin-matrix-card label { font-size: 0.85rem; font-weight: bold; color: var(--brand-green); display: block; margin-bottom: 5px; }
         .admin-matrix-card input { width: 100%; background: #121212; border: 1px solid var(--border); color: #fff; padding: 8px; border-radius: 4px; font-size: 0.85rem; }
-        
         .admin-textarea-block { margin-top: 15px; background: var(--surface-accent); padding: 15px; border-radius: 6px; }
         .admin-textarea-block label { font-size: 0.9rem; font-weight: bold; color: var(--brand-green); display: block; margin-bottom: 5px; }
         .admin-textarea-block textarea { width: 100%; height: 80px; background: #121212; border: 1px solid var(--border); color: #fff; padding: 10px; border-radius: 4px; resize: vertical; font-size: 0.85rem; }
@@ -166,7 +117,7 @@
             <p>Integrated HACCP Kitchen Console</p>
         </div>
         <div class="header-actions">
-            <button class="btn-secondary" onclick="openAdminModal()">⚙️ Admin Settings</button>
+            <button class="btn-secondary" onclick="openAdminModal()">⚙️ Settings</button>
             <div id="clock-container">
                 <div id="clock">00:00:00</div>
                 <div id="date">Loading...</div>
@@ -174,7 +125,18 @@
         </div>
     </header>
 
+    <!-- OPERATIONAL MODE STRIP -->
+    <div class="mode-strip">
+        <div class="mode-title">SFBB Operational State:</div>
+        <div class="mode-buttons">
+            <button class="btn-mode active" id="mode-standard" onclick="setOperationalMode('STANDARD')">Standard Session</button>
+            <button class="btn-mode" id="mode-peak" onclick="setOperationalMode('PEAK')">🔥 Peak Production</button>
+            <button class="btn-mode" id="mode-warm" onclick="setOperationalMode('WARM')">☀️ Warm Weather / Heatwave</button>
+        </div>
+    </div>
+
     <main>
+        <!-- COLD HOLDING -->
         <section class="panel">
             <div class="panel-header">
                 <h2>Cold Holding Records</h2>
@@ -192,7 +154,7 @@
                     </div>
                 </div>
                 <div class="deviation-panel" id="fridge-deviation">
-                    <p style="font-size:0.8rem; color:var(--alert-amber); margin-bottom:5px;">⚠️ DEVIATION DETECTED (&gt;5.0°C)</p>
+                    <p style="font-size:0.8rem; color:var(--alert-amber); margin-bottom:5px;">⚠️ DEVIATION DETECTED (&gt;5.0°C) - 30m RE-AUDIT ESCALATED</p>
                     <textarea id="fridge-action" placeholder="Log remediation steps..."></textarea>
                 </div>
 
@@ -214,14 +176,32 @@
             </div>
         </section>
 
+        <!-- DYNAMIC TASKS -->
         <section class="panel">
             <div class="panel-header">
                 <h2>Dynamic Tasks</h2>
                 <span id="current-day-label" style="font-size:0.8rem; color:var(--brand-green); font-weight:bold;">---</span>
             </div>
+
+            <!-- QUICK ADD TASK TOOL -->
+            <div class="add-task-box">
+                <span style="font-size:0.75rem; font-weight:bold; color:var(--brand-green);">+ ADD AD-HOC PRODUCTION TASK</span>
+                <div class="add-task-row">
+                    <input type="text" id="new-task-text" class="add-task-input" placeholder="e.g. Wash equipment / Sugar temp check...">
+                    <select id="new-task-freq" class="add-task-select">
+                        <option value="ONCE">One-Off</option>
+                        <option value="1">Hourly</option>
+                        <option value="2">Every 2 Hrs</option>
+                        <option value="4">Every 4 Hrs</option>
+                    </select>
+                    <button class="btn-action" onclick="addCustomTask()">Add</button>
+                </div>
+            </div>
+
             <div id="checklist-container"></div>
         </section>
 
+        <!-- TIMERS -->
         <section class="panel">
             <div class="panel-header">
                 <h2>Interval Timers & Alerts</h2>
@@ -253,6 +233,7 @@
             </div>
         </section>
 
+        <!-- SPREADSHEET LEDGER -->
         <section class="panel">
             <div class="panel-header">
                 <h2>Product Log Spreadsheet</h2>
@@ -275,6 +256,7 @@
         </section>
     </main>
 
+    <!-- ADMIN OVERLAY -->
     <div id="admin-overlay">
         <div class="admin-modal">
             <div class="panel-header">
@@ -339,9 +321,11 @@
         }
 
         let state = {
+            mode: "STANDARD", // STANDARD, PEAK, WARM
             fridgeTemp: 4.0, freezerTemp: -18,
             fridgeAction: "", freezerAction: "",
             completedTasks: {},
+            customTasks: [], // Array of { id, text, freqHours, lastDoneTS }
             timers: { fridge: 12 * 3600, sanitize: 2 * 3600, waste: 4 * 3600, bake: 45 * 60 },
             bakeTimerRunning: false,
             config: {
@@ -368,9 +352,323 @@
             ]
         };
 
+        function setOperationalMode(newMode) {
+            state.mode = newMode;
+            document.querySelectorAll('.btn-mode').forEach(b => b.classList.remove('active'));
+            
+            if (newMode === 'STANDARD') {
+                document.getElementById('mode-standard').classList.add('active');
+                state.config.intervals.fridge = 12;
+                state.config.intervals.sanitize = 2;
+                state.config.intervals.waste = 4;
+            } else if (newMode === 'PEAK') {
+                document.getElementById('mode-peak').classList.add('active');
+                state.config.intervals.fridge = 6;
+                state.config.intervals.sanitize = 1; // Double sanitization frequency
+                state.config.intervals.waste = 2;
+            } else if (newMode === 'WARM') {
+                document.getElementById('mode-warm').classList.add('active');
+                state.config.intervals.fridge = 4; // High frequency cold holding check
+                state.config.intervals.sanitize = 2;
+                state.config.intervals.waste = 4;
+            }
+
+            // Apply new intervals immediately to state timers
+            triggerRoutineReset('fridge');
+            triggerRoutineReset('sanitize');
+            triggerRoutineReset('waste');
+
+            const currentDayString = new Date().toLocaleDateString('en-GB', { weekday: 'long' });
+            renderChecklist(currentDayString);
+            saveToDisk();
+        }
+
         function heartbeat() {
             const now = new Date();
             document.getElementById('clock').textContent = now.toTimeString().split(' ')[0];
             document.getElementById('date').textContent = now.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
             
-            const currentDayString = now.toLocaleDateString('en-GB', { weekday: 'long
+            const currentDayString = now.toLocaleDateString('en-GB', { weekday: 'long' });
+            if (document.getElementById('current-day-label').textContent !== currentDayString) {
+                document.getElementById('current-day-label').textContent = currentDayString;
+                renderChecklist(currentDayString);
+            }
+
+            manageIntervalTimer('fridge', 'time-fridge');
+            manageIntervalTimer('sanitize', 'time-sanitize');
+            manageIntervalTimer('waste', 'time-waste');
+            if (state.bakeTimerRunning) manageIntervalTimer('bake', 'time-bake', true);
+
+            evaluateProductLifespans();
+        }
+
+        function manageIntervalTimer(key, elementId, stopAtZero = false) {
+            if (state.timers[key] > 0) {
+                state.timers[key]--;
+                document.getElementById(elementId).textContent = formatSeconds(state.timers[key]);
+                document.getElementById(`timer-${key}`).classList.remove('alarm', 'active');
+                if (state.timers[key] < 300) document.getElementById(`timer-${key}`).classList.add('active');
+            } else {
+                document.getElementById(elementId).textContent = "00:00:00";
+                document.getElementById(`timer-${key}`).classList.add('alarm');
+                if (Math.floor(Date.now() / 1000) % 2 === 0) playAlarmSound(key === 'bake' ? 880 : 540, 0.1);
+                if (stopAtZero && key === 'bake') state.bakeTimerRunning = false;
+            }
+        }
+
+        function formatSeconds(totalSeconds) {
+            const hrs = Math.floor(totalSeconds / 3600).toString().padStart(2, '0');
+            const mins = Math.floor((totalSeconds % 3600) / 60).toString().padStart(2, '0');
+            const secs = (totalSeconds % 60).toString().padStart(2, '0');
+            return `${hrs}:${mins}:${secs}`;
+        }
+
+        function triggerRoutineReset(key) {
+            const runtimeTargetHours = state.config.intervals[key];
+            state.timers[key] = runtimeTargetHours * 3600;
+            document.getElementById(`timer-${key}`).classList.remove('alarm', 'active');
+            saveToDisk();
+        }
+
+        function toggleBakeTimer() {
+            state.bakeTimerRunning = !state.bakeTimerRunning;
+            document.getElementById('btn-bake-toggle').textContent = state.bakeTimerRunning ? "Pause" : "Start";
+        }
+
+        function adjustBakeTimer(minutes) {
+            state.timers.bake += (minutes * 60);
+            document.getElementById('time-bake').textContent = formatSeconds(state.timers.bake);
+        }
+
+        function addCustomTask() {
+            const txt = document.getElementById('new-task-text').value.trim();
+            const freq = document.getElementById('new-task-freq').value;
+            if (!txt) return;
+
+            const newTask = {
+                id: 'custom-' + Date.now(),
+                text: txt,
+                freqHours: freq
+            };
+
+            state.customTasks.push(newTask);
+            document.getElementById('new-task-text').value = "";
+            saveToDisk();
+            
+            const currentDayString = new Date().toLocaleDateString('en-GB', { weekday: 'long' });
+            renderChecklist(currentDayString);
+        }
+
+        function renderChecklist(day) {
+            const container = document.getElementById('checklist-container');
+            if (!container) return;
+            
+            let html = `<h4 style="font-size:0.8rem; color:var(--brand-green); margin: 5px 0;">STANDARD PRE-SESSION RUNS</h4>`;
+            
+            if (state.config.preSessionChecklist && state.config.preSessionChecklist.length > 0) {
+                state.config.preSessionChecklist.forEach((taskText, index) => {
+                    if (taskText.trim().length > 0) {
+                        html += createChecklistItemHtml(`presess-${index}`, taskText.trim());
+                    }
+                });
+            }
+
+            // Mode-specific extra tasks
+            if (state.mode === 'PEAK') {
+                html += `<h4 style="font-size:0.8rem; color:var(--alert-amber); margin: 12px 0 5px 0;">🔥 PEAK BATCH EXTRA CHECKS</h4>`;
+                html += createChecklistItemHtml(`peak-1`, "Mid-Session Equipment Wash & Bowl Staging Check");
+                html += createChecklistItemHtml(`peak-2`, "Sanitizer Bucket & Wipe Refresh");
+            }
+
+            // Custom Ad-hoc tasks
+            if (state.customTasks && state.customTasks.length > 0) {
+                html += `<h4 style="font-size:0.8rem; color:var(--brand-green); margin: 12px 0 5px 0;">⚡ AD-HOC PRODUCTION CHECKS</h4>`;
+                state.customTasks.forEach(task => {
+                    const freqTag = task.freqHours === 'ONCE' ? '(One-Off)' : `(Every ${task.freqHours}h)`;
+                    html += createChecklistItemHtml(task.id, `${task.text} <span style="color:var(--text-muted); font-size:0.75rem;">${freqTag}</span>`);
+                });
+            }
+
+            html += `<h4 style="font-size:0.8rem; color:var(--alert-amber); margin: 12px 0 5px 0;">DEEP CLEANING LOGS FOR ${day.toUpperCase()}</h4>`;
+            const targetedTaskText = state.config.cleaningMatrix[day] || "No deep clean routine mapped for today.";
+            html += createChecklistItemHtml(`day-${day}`, targetedTaskText);
+            
+            container.innerHTML = html;
+        }
+
+        function createChecklistItemHtml(id, text) {
+            const checkedClass = state.completedTasks[id] ? "checked" : "";
+            const ts = state.completedTasks[id] ? state.completedTasks[id] : "";
+            return `
+                <div class="checklist-item ${checkedClass}" onclick="toggleTaskState(this, '${id}')">
+                    <div class="checkbox-mock"></div>
+                    <div class="task-text">${text}</div>
+                    <div class="timestamp">${ts}</div>
+                </div>`;
+        }
+
+        function toggleTaskState(element, id) {
+            const isChecked = element.classList.toggle('checked');
+            const tsEl = element.querySelector('.timestamp');
+            if (isChecked) {
+                const ts = new Date().toTimeString().split(' ')[0].substring(0, 5);
+                tsEl.textContent = ts;
+                state.completedTasks[id] = ts;
+            } else {
+                tsEl.textContent = "";
+                delete state.completedTasks[id];
+            }
+            saveToDisk();
+        }
+
+        function adjustTemp(unit, amount) {
+            if(unit === 'fridge') {
+                state.fridgeTemp = parseFloat((state.fridgeTemp + amount).toFixed(1));
+                document.getElementById('fridge-val').textContent = `${state.fridgeTemp.toFixed(1)}°C`;
+                
+                const isBreached = state.fridgeTemp > 5.0;
+                document.getElementById('fridge-deviation').style.display = isBreached ? 'block' : 'none';
+                
+                // SFBB Escalation logic: If fridge breached, force 30 min audit timer
+                if (isBreached) {
+                    state.timers.fridge = 30 * 60; // 30 minutes
+                }
+            } else {
+                state.freezerTemp = parseFloat((state.freezerTemp + amount).toFixed(1));
+                document.getElementById('freezer-val').textContent = `${state.freezerTemp.toFixed(1)}°C`;
+                document.getElementById('freezer-deviation').style.display = state.freezerTemp > -15.0 ? 'block' : 'none';
+            }
+            saveToDisk();
+        }
+
+        function renderSpreadsheet() {
+            const tbody = document.getElementById('ledger-body');
+            if (!tbody) return;
+            tbody.innerHTML = "";
+            state.products.forEach(p => {
+                const row = document.createElement('tr');
+                row.setAttribute('data-id', p.id);
+                row.innerHTML = `
+                    <td contenteditable="true" onblur="updateLedgerCell(${p.id}, 'date', this)">${p.date}</td>
+                    <td contenteditable="true" onblur="updateLedgerCell(${p.id}, 'desc', this)">${p.desc}</td>
+                    <td contenteditable="true" onblur="updateLedgerCell(${p.id}, 'trace', this)">${p.trace}</td>
+                    <td contenteditable="true" onblur="updateLedgerCell(${p.id}, 'allergens', this)">${p.allergens}</td>
+                    <td contenteditable="true" onblur="updateLedgerCell(${p.id}, 'useBy', this)">${p.useBy}</td>
+                `;
+                tbody.appendChild(row);
+            });
+            evaluateProductLifespans();
+        }
+
+        function addNewProductRow() {
+            const todayISO = new Date().toISOString().split('T')[0];
+            const newRow = { id: Date.now(), date: todayISO, desc: "New Batch Run", trace: "Trace Codes", allergens: "None", useBy: todayISO };
+            state.products.unshift(newRow);
+            renderSpreadsheet();
+            saveToDisk();
+        }
+
+        function updateLedgerCell(id, fieldsKey, element) {
+            const item = state.products.find(p => p.id === id);
+            if (item) {
+                item[fieldsKey] = element.textContent.trim();
+                saveToDisk();
+                if (fieldsKey === 'useBy') evaluateProductLifespans();
+            }
+        }
+
+        function evaluateProductLifespans() {
+            const todayStr = new Date().toISOString().split('T')[0];
+            const tbody = document.getElementById('ledger-body');
+            if (!tbody) return;
+            const rows = tbody.querySelectorAll('tr');
+            rows.forEach(row => {
+                const id = parseInt(row.getAttribute('data-id'));
+                const prod = state.products.find(p => p.id === id);
+                if (prod && prod.useBy < todayStr) row.classList.add('expired-row');
+                else row.classList.remove('expired-row');
+            });
+        }
+
+        function openAdminModal() {
+            document.getElementById('cfg-fridge-lbl').textContent = `${state.config.intervals.fridge}h`;
+            document.getElementById('cfg-sanitize-lbl').textContent = `${state.config.intervals.sanitize}h`;
+            document.getElementById('cfg-waste-lbl').textContent = `${state.config.intervals.waste}h`;
+
+            document.getElementById('cfg-pre-session').value = state.config.preSessionChecklist.join('; ');
+
+            const container = document.getElementById('admin-matrix-injector');
+            container.innerHTML = "";
+            Object.keys(state.config.cleaningMatrix).forEach(day => {
+                container.innerHTML += `
+                    <div class="admin-matrix-card">
+                        <label>${day}</label>
+                        <input type="text" id="cfg-matrix-${day}" value="${state.config.cleaningMatrix[day]}">
+                    </div>`;
+            });
+            document.getElementById('admin-overlay').style.display = 'block';
+        }
+
+        function closeAdminModal() { document.getElementById('admin-overlay').style.display = 'none'; }
+
+        function adjustAdminConfigInterval(key, amount) {
+            let target = state.config.intervals[key] + amount;
+            if (target < 1) target = 1;
+            if (target > 72) target = 72;
+            state.config.intervals[key] = target;
+            document.getElementById(`cfg-${key}-lbl`).textContent = `${target}h`;
+        }
+
+        function saveAndApplyAdminConfig() {
+            const txtRaw = document.getElementById('cfg-pre-session').value;
+            state.config.preSessionChecklist = txtRaw.split(';').map(t => t.trim()).filter(t => t.length > 0);
+
+            Object.keys(state.config.cleaningMatrix).forEach(day => {
+                const inputEl = document.getElementById(`cfg-matrix-${day}`);
+                if (inputEl) state.config.cleaningMatrix[day] = inputEl.value.trim();
+            });
+            
+            saveToDisk();
+            const currentDayString = new Date().toLocaleDateString('en-GB', { weekday: 'long' });
+            renderChecklist(currentDayString);
+            closeAdminModal();
+            playAlarmSound(880, 0.08);
+        }
+
+        function saveToDisk() { localStorage.setItem('forge_kitchen_v7_state', JSON.stringify(state)); }
+
+        function loadFromDisk() {
+            const stored = localStorage.getItem('forge_kitchen_v7_state');
+            if (stored) {
+                try {
+                    const parsed = JSON.parse(stored);
+                    if (parsed) state = Object.assign(state, parsed);
+                } catch(e) { console.log(e); }
+            }
+            
+            document.getElementById('fridge-val').textContent = `${state.fridgeTemp.toFixed(1)}°C`;
+            document.getElementById('freezer-val').textContent = `${state.freezerTemp.toFixed(1)}°C`;
+            document.getElementById('fridge-deviation').style.display = state.fridgeTemp > 5.0 ? 'block' : 'none';
+            document.getElementById('freezer-deviation').style.display = state.freezerTemp > -15.0 ? 'block' : 'none';
+            document.getElementById('fridge-action').value = state.fridgeAction || "";
+            document.getElementById('freezer-action').value = state.freezerAction || "";
+            
+            setOperationalMode(state.mode || 'STANDARD');
+            renderSpreadsheet();
+        }
+
+        window.onload = () => {
+            loadFromDisk();
+            
+            const fAction = document.getElementById('fridge-action');
+            if (fAction) fAction.addEventListener('input', (e) => { state.fridgeAction = e.target.value; saveToDisk(); });
+            
+            const freezAction = document.getElementById('freezer-action');
+            if (freezAction) freezAction.addEventListener('input', (e) => { state.freezerAction = e.target.value; saveToDisk(); });
+
+            setInterval(heartbeat, 1000);
+            heartbeat();
+        };
+    </script>
+</body>
+</html>
