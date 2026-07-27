@@ -79,7 +79,7 @@
         .add-task-select { background: #121212; border: 1px solid var(--border); color: #fff; padding: 8px; border-radius: 4px; font-size: 0.85rem; }
 
         .spreadsheet-container { width: 100%; overflow-x: auto; border: 1px solid var(--border); border-radius: 4px; margin-top: 5px; }
-        table.ledger { width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left; min-width: 600px; }
+        table.ledger { width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left; min-width: 500px; }
         table.ledger th { background-color: #252525; color: var(--text-main); padding: 10px 8px; font-weight: 600; border-bottom: 2px solid var(--border); border-right: 1px solid var(--border); }
         table.ledger td { padding: 10px 8px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); background-color: var(--surface); }
         table.ledger tr:nth-child(even) td { background-color: #222; }
@@ -90,7 +90,7 @@
         /* PRINT / EXPORT STYLES */
         @media print {
             body { background-color: #fff !important; color: #000 !important; font-size: 10pt; }
-            header, .mode-strip, .timer-grid, .add-task-box, .btn-action, .btn-secondary, .btn-temp, .header-actions { display: none !important; }
+            header, .mode-strip, .add-task-box, .btn-action, .btn-secondary, .btn-temp, .header-actions, .timer-controls, .add-task-row { display: none !important; }
             main { display: block !important; }
             .panel { background: #fff !important; color: #000 !important; border: 1px solid #ccc !important; margin-bottom: 15px; page-break-inside: avoid; }
             .panel-header h2 { color: #000 !important; }
@@ -98,6 +98,7 @@
             table.ledger th { background-color: #eee !important; color: #000 !important; }
             table.ledger td { background-color: #fff !important; color: #000 !important; }
             .print-header { display: block !important; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px; }
+            .timer-card { background: #fff !important; color: #000 !important; border: 1px solid #ccc !important; }
         }
         .print-header { display: none; }
     </style>
@@ -169,6 +170,83 @@
             </div>
         </section>
 
+        <!-- TIMERS & AUTOMATED ROUTINE AUDIT -->
+        <section class="panel">
+            <div class="panel-header">
+                <h2>Interval Timers & Automated Resets</h2>
+            </div>
+            <div class="timer-grid">
+                <div class="timer-card" id="timer-fridge">
+                    <div class="timer-title">Fridge Audit</div>
+                    <div class="timer-time" id="time-fridge">12:00:00</div>
+                    <div class="timer-controls"><button onclick="triggerRoutineReset('fridge')">Reset</button></div>
+                </div>
+                <div class="timer-card" id="timer-sanitize">
+                    <div class="timer-title">Sanitisation</div>
+                    <div class="timer-time" id="time-sanitize">02:00:00</div>
+                    <div class="timer-controls"><button onclick="triggerRoutineReset('sanitize')">Reset</button></div>
+                </div>
+                <div class="timer-card" id="timer-bake">
+                    <div class="timer-title">Oven / Bake</div>
+                    <div class="timer-time" id="time-bake">00:45:00</div>
+                    <div class="timer-controls">
+                        <button onclick="adjustBakeTimer(5)">+5m</button>
+                        <button onclick="toggleBakeTimer()" id="btn-bake-toggle">Start</button>
+                    </div>
+                </div>
+                <div class="timer-card" id="timer-waste">
+                    <div class="timer-title">Bin Pull</div>
+                    <div class="timer-time" id="time-waste">04:00:00</div>
+                    <div class="timer-controls"><button onclick="triggerRoutineReset('waste')">Reset</button></div>
+                </div>
+            </div>
+
+            <!-- AUTOMATED ROUTINE AUDIT LOG TABLE -->
+            <div class="spreadsheet-container" style="margin-top: 15px;">
+                <h4 style="font-size:0.75rem; color:var(--brand-green); margin: 8px 0;">INTERVAL RESET TIMESTAMP AUDIT</h4>
+                <table class="ledger">
+                    <thead>
+                        <tr>
+                            <th style="width: 20%;">Time</th>
+                            <th>Automated Action Recorded</th>
+                        </tr>
+                    </thead>
+                    <tbody id="routine-log-body"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- OPENED GOODS & BARCODE TRACKER -->
+        <section class="panel">
+            <div class="panel-header">
+                <h2>Opened Goods & Barcode Shelf-Life Tracker</h2>
+            </div>
+
+            <div class="add-task-box">
+                <span style="font-size:0.75rem; font-weight:bold; color:var(--brand-green);">+ OPEN NEW INGREDIENT (Scan Barcode or Type Name)</span>
+                <div class="add-task-row">
+                    <input type="text" id="barcode-input" class="add-task-input" placeholder="Scan Barcode (EAN) or Type Name..." style="flex-grow:2;">
+                    <input type="number" id="pao-months" class="add-task-input" placeholder="PAO (Months)" style="max-width:110px;" value="3">
+                    <button class="btn-action" onclick="processBarcodeEntry()">Log Opened Item</button>
+                </div>
+            </div>
+
+            <div class="spreadsheet-container">
+                <table class="ledger">
+                    <thead>
+                        <tr>
+                            <th>Opened Date</th>
+                            <th>Ingredient / Product</th>
+                            <th>Barcode</th>
+                            <th>Calculated Expiry</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pantry-log-body"></tbody>
+                </table>
+            </div>
+        </section>
+
         <!-- BATCH PRODUCTION LOG (SPONGES, GANACHE, FROZEN STOCK) -->
         <section class="panel">
             <div class="panel-header">
@@ -223,48 +301,25 @@
 
             <div id="checklist-container"></div>
         </section>
-
-        <!-- TIMERS -->
-        <section class="panel">
-            <div class="panel-header">
-                <h2>Interval Timers & Alerts</h2>
-            </div>
-            <div class="timer-grid">
-                <div class="timer-card" id="timer-fridge">
-                    <div class="timer-title">Fridge Audit</div>
-                    <div class="timer-time" id="time-fridge">12:00:00</div>
-                    <div class="timer-controls"><button onclick="triggerRoutineReset('fridge')">Reset</button></div>
-                </div>
-                <div class="timer-card" id="timer-sanitize">
-                    <div class="timer-title">Sanitization</div>
-                    <div class="timer-time" id="time-sanitize">02:00:00</div>
-                    <div class="timer-controls"><button onclick="triggerRoutineReset('sanitize')">Reset</button></div>
-                </div>
-                <div class="timer-card" id="timer-bake">
-                    <div class="timer-title">Oven / Bake</div>
-                    <div class="timer-time" id="time-bake">00:45:00</div>
-                    <div class="timer-controls">
-                        <button onclick="adjustBakeTimer(5)">+5m</button>
-                        <button onclick="toggleBakeTimer()" id="btn-bake-toggle">Start</button>
-                    </div>
-                </div>
-                <div class="timer-card" id="timer-waste">
-                    <div class="timer-title">Bin Pull</div>
-                    <div class="timer-time" id="time-waste">04:00:00</div>
-                    <div class="timer-controls"><button onclick="triggerRoutineReset('waste')">Reset</button></div>
-                </div>
-            </div>
-        </section>
     </main>
 
     <script>
+        // Preset Barcode Database
+        const BARCODE_DB = {
+            "5010029000148": { name: "Self Raising Flour 1.5kg", defaultPaoMonths: 3 },
+            "5000128001234": { name: "Callebaut 811 Dark Callets", defaultPaoMonths: 12 },
+            "5010011000010": { name: "Icing Sugar 1kg", defaultPaoMonths: 6 }
+        };
+
         let state = {
             mode: "STANDARD",
             fridgeTemp: 4.0, freezerTemp: -18.0,
             fridgeAction: "",
             completedTasks: {},
             customTasks: [],
-            batches: [], // { time, item, code, temp, storage }
+            batches: [],
+            openedIngredients: [],
+            routineAuditLog: [],
             timers: { fridge: 12 * 3600, sanitize: 2 * 3600, waste: 4 * 3600, bake: 45 * 60 },
             bakeTimerRunning: false,
             intervals: { fridge: 12, sanitize: 2, waste: 4 },
@@ -287,189 +342,4 @@
                 state.intervals = { fridge: 6, sanitize: 1, waste: 2 };
             } else if (newMode === 'WARM') {
                 document.getElementById('mode-warm').classList.add('active');
-                state.intervals = { fridge: 4, sanitize: 2, waste: 4 };
-            }
-            saveToDisk();
-            renderChecklist(new Date().toLocaleDateString('en-GB', { weekday: 'long' }));
-        }
-
-        function heartbeat() {
-            const now = new Date();
-            document.getElementById('clock').textContent = now.toTimeString().split(' ')[0];
-            const dateStr = now.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-            document.getElementById('date').textContent = dateStr;
-            document.getElementById('print-date-str').textContent = `Log Generated: ${dateStr} at ${now.toTimeString().split(' ')[0]}`;
-            
-            const currentDayString = now.toLocaleDateString('en-GB', { weekday: 'long' });
-            if (document.getElementById('current-day-label').textContent !== currentDayString) {
-                document.getElementById('current-day-label').textContent = currentDayString;
-                renderChecklist(currentDayString);
-            }
-
-            manageTimer('fridge', 'time-fridge');
-            manageTimer('sanitize', 'time-sanitize');
-            manageTimer('waste', 'time-waste');
-            if (state.bakeTimerRunning) manageTimer('bake', 'time-bake', true);
-        }
-
-        function manageTimer(key, elementId, stopAtZero = false) {
-            if (state.timers[key] > 0) {
-                state.timers[key]--;
-                document.getElementById(elementId).textContent = formatSeconds(state.timers[key]);
-            } else if (stopAtZero) {
-                state.bakeTimerRunning = false;
-            }
-        }
-
-        function formatSeconds(s) {
-            const h = Math.floor(s / 3600).toString().padStart(2, '0');
-            const m = Math.floor((s % 3600) / 60).toString().padStart(2, '0');
-            const sec = (s % 60).toString().padStart(2, '0');
-            return `${h}:${m}:${sec}`;
-        }
-
-        function triggerRoutineReset(key) {
-            state.timers[key] = state.intervals[key] * 3600;
-            saveToDisk();
-        }
-
-        function toggleBakeTimer() {
-            state.bakeTimerRunning = !state.bakeTimerRunning;
-            document.getElementById('btn-bake-toggle').textContent = state.bakeTimerRunning ? "Pause" : "Start";
-        }
-
-        function adjustBakeTimer(mins) {
-            state.timers.bake += mins * 60;
-            document.getElementById('time-bake').textContent = formatSeconds(state.timers.bake);
-        }
-
-        function adjustTemp(unit, amount) {
-            if (unit === 'fridge') {
-                state.fridgeTemp = parseFloat((state.fridgeTemp + amount).toFixed(1));
-                document.getElementById('fridge-val').textContent = `${state.fridgeTemp.toFixed(1)}°C`;
-                document.getElementById('fridge-deviation').style.display = state.fridgeTemp > 5.0 ? 'block' : 'none';
-            } else {
-                state.freezerTemp = parseFloat((state.freezerTemp + amount).toFixed(1));
-                document.getElementById('freezer-val').textContent = `${state.freezerTemp.toFixed(1)}°C`;
-            }
-            saveToDisk();
-        }
-
-        function logNewBatch() {
-            const item = document.getElementById('batch-item').value.trim();
-            const code = document.getElementById('batch-code').value.trim();
-            const temp = document.getElementById('batch-temp').value.trim();
-            const storage = document.getElementById('batch-storage').value;
-
-            if (!item) return;
-
-            const time = new Date().toTimeString().split(' ')[0].substring(0, 5);
-            state.batches.unshift({ time, item, code: code || 'N/A', temp: temp ? `${temp}°C` : 'N/A', storage });
-            
-            document.getElementById('batch-item').value = "";
-            document.getElementById('batch-code').value = "";
-            document.getElementById('batch-temp').value = "";
-
-            renderBatches();
-            saveToDisk();
-        }
-
-        function renderBatches() {
-            const tbody = document.getElementById('batch-log-body');
-            tbody.innerHTML = "";
-            state.batches.forEach(b => {
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${b.time}</td>
-                        <td><b>${b.item}</b></td>
-                        <td>${b.code}</td>
-                        <td>${b.temp}</td>
-                        <td>${b.storage}</td>
-                    </tr>`;
-            });
-        }
-
-        function addCustomTask() {
-            const txt = document.getElementById('new-task-text').value.trim();
-            if (!txt) return;
-            state.customTasks.push({ id: 'custom-' + Date.now(), text: txt });
-            document.getElementById('new-task-text').value = "";
-            saveToDisk();
-            renderChecklist(new Date().toLocaleDateString('en-GB', { weekday: 'long' }));
-        }
-
-        function renderChecklist(day) {
-            const container = document.getElementById('checklist-container');
-            let html = `<h4 style="font-size:0.8rem; color:var(--brand-green); margin: 5px 0;">STANDARD PRE-SESSION CHECKS</h4>`;
-            
-            state.preSessionChecklist.forEach((task, i) => {
-                html += createChecklistItemHtml(`presess-${i}`, task);
-            });
-
-            if (state.customTasks.length > 0) {
-                html += `<h4 style="font-size:0.8rem; color:var(--brand-green); margin: 12px 0 5px 0;">AD-HOC CHECKS</h4>`;
-                state.customTasks.forEach(task => {
-                    html += createChecklistItemHtml(task.id, task.text);
-                });
-            }
-
-            container.innerHTML = html;
-        }
-
-        function createChecklistItemHtml(id, text) {
-            const checkedClass = state.completedTasks[id] ? "checked" : "";
-            const ts = state.completedTasks[id] ? state.completedTasks[id] : "";
-            return `
-                <div class="checklist-item ${checkedClass}" onclick="toggleTaskState(this, '${id}')">
-                    <div class="checkbox-mock"></div>
-                    <div class="task-text">${text}</div>
-                    <div class="timestamp">${ts}</div>
-                </div>`;
-        }
-
-        function toggleTaskState(element, id) {
-            const isChecked = element.classList.toggle('checked');
-            const tsEl = element.querySelector('.timestamp');
-            if (isChecked) {
-                const ts = new Date().toTimeString().split(' ')[0].substring(0, 5);
-                tsEl.textContent = ts;
-                state.completedTasks[id] = ts;
-            } else {
-                tsEl.textContent = "";
-                delete state.completedTasks[id];
-            }
-            saveToDisk();
-        }
-
-        function exportDailyPdf() {
-            window.print();
-        }
-
-        function saveToDisk() { localStorage.setItem('forge_kitchen_v8_state', JSON.stringify(state)); }
-
-        function loadFromDisk() {
-            const stored = localStorage.getItem('forge_kitchen_v8_state');
-            if (stored) {
-                try {
-                    const parsed = JSON.parse(stored);
-                    if (parsed) state = Object.assign(state, parsed);
-                } catch(e) { console.log(e); }
-            }
-            document.getElementById('fridge-val').textContent = `${state.fridgeTemp.toFixed(1)}°C`;
-            document.getElementById('freezer-val').textContent = `${state.freezerTemp.toFixed(1)}°C`;
-            document.getElementById('fridge-deviation').style.display = state.fridgeTemp > 5.0 ? 'block' : 'none';
-            document.getElementById('fridge-action').value = state.fridgeAction || "";
-            renderBatches();
-            renderChecklist(new Date().toLocaleDateString('en-GB', { weekday: 'long' }));
-        }
-
-        window.onload = () => {
-            loadFromDisk();
-            const fAction = document.getElementById('fridge-action');
-            if (fAction) fAction.addEventListener('input', (e) => { state.fridgeAction = e.target.value; saveToDisk(); });
-            setInterval(heartbeat, 1000);
-            heartbeat();
-        };
-    </script>
-</body>
-</html>
+                state.intervals = { fridge: 4, sanit
