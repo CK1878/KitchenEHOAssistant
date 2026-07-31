@@ -3,507 +3,432 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>The Cake Forge — Kitchen Management & EHO Hub</title>
+  <title>The Cake Forge — Kitchen Console</title>
   <style>
     :root {
-      --primary: #1e293b;
-      --accent: #d97706;
-      --success: #16a34a;
-      --warning: #ca8a04;
-      --danger: #dc2626;
-      --bg: #f8fafc;
-      --card-bg: #ffffff;
-      --border: #e2e8f0;
-      --text: #0f172a;
+      --bg-dark: #11161d;
+      --card-bg: #1d2530;
+      --card-inner: #27313f;
+      --primary-blue: #38bdf8;
+      --accent-blue: #0284c7;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --danger: #ef4444;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --border: #334155;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
-    body { background-color: var(--bg); color: var(--text); padding: 15px; max-width: 900px; margin: 0 auto; padding-bottom: 60px; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    body { background-color: var(--bg-dark); color: var(--text-main); padding: 14px; max-width: 900px; margin: 0 auto; padding-bottom: 50px; }
 
-    /* Header & Branding */
-    header {
-      background: var(--primary);
-      color: white;
-      padding: 16px 20px;
-      border-radius: 10px;
+    /* Top Navigation Tabs */
+    .nav-header { display: flex; gap: 8px; margin-bottom: 12px; }
+    .nav-tab {
+      flex: 1;
+      padding: 10px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-weight: 700;
+      border-radius: 8px;
+      cursor: pointer;
+      text-align: center;
+      font-size: 0.9rem;
+    }
+    .nav-tab.active { background: var(--accent-blue); color: white; border-color: var(--primary-blue); }
+
+    /* Header Bar */
+    .header-bar {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 15px;
-      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+      margin-bottom: 14px;
     }
-    header h1 { font-size: 1.3rem; letter-spacing: 0.5px; font-weight: 700; }
-    header span { font-size: 0.8rem; color: #94a3b8; display: block; margin-top: 2px; }
-    .btn-pdf {
-      background: var(--accent);
-      color: white;
-      border: none;
-      padding: 10px 16px;
-      font-weight: 700;
-      border-radius: 6px;
-      cursor: pointer;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.15);
-    }
+    .brand h1 { font-size: 1.3rem; font-weight: 900; letter-spacing: 0.5px; color: var(--primary-blue); text-transform: uppercase; }
+    .brand span { font-size: 0.75rem; color: var(--text-muted); display: block; }
+    
+    .clock-display { text-align: right; }
+    .clock-time { font-size: 1.4rem; font-weight: 800; font-family: monospace; color: var(--text-main); }
+    .clock-date { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; }
 
-    /* Navigation Tabs */
-    .nav-tabs { display: flex; gap: 8px; margin-bottom: 15px; }
-    .tab-btn {
-      flex: 1;
-      padding: 12px;
-      background: #e2e8f0;
-      border: none;
-      border-radius: 8px;
-      font-weight: 700;
-      cursor: pointer;
-      color: var(--primary);
-      font-size: 0.9rem;
-    }
-    .tab-btn.active { background: var(--primary); color: white; }
-
-    /* Cards & Layout */
+    /* Section Cards */
     .card {
       background: var(--card-bg);
-      padding: 18px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      margin-bottom: 15px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 14px;
+      border: 1px solid rgba(255,255,255,0.05);
     }
-    .card h2 { font-size: 1.1rem; color: var(--primary); margin-bottom: 12px; border-bottom: 2px solid var(--bg); padding-bottom: 6px; }
+    .card-title {
+      font-size: 0.85rem;
+      font-weight: 800;
+      color: var(--primary-blue);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 12px;
+    }
 
-    /* Form Controls */
-    label { display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 4px; color: #475569; }
-    input[type="text"], input[type="number"], select {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid #cbd5e1;
+    /* SFBB Operational State Toggles */
+    .state-buttons { display: flex; gap: 8px; }
+    .btn-state {
+      flex: 1;
+      padding: 10px 6px;
+      background: var(--card-inner);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+    .btn-state.active { background: var(--primary-blue); color: #000; font-weight: 800; border-color: var(--primary-blue); }
+
+    /* Cold Holding Touch Controls */
+    .temp-item {
+      background: var(--card-inner);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .temp-info h3 { font-size: 0.95rem; font-weight: 700; color: var(--text-main); }
+    .temp-info span { font-size: 0.75rem; color: var(--text-muted); }
+    
+    .stepper-control { display: flex; align-items: center; gap: 12px; }
+    .btn-step {
+      width: 38px;
+      height: 38px;
+      background: #334155;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      font-size: 1.2rem;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .btn-step:active { background: var(--primary-blue); color: black; }
+    .temp-val { font-size: 1.3rem; font-weight: 800; font-family: monospace; min-width: 65px; text-align: center; }
+
+    /* Interval Timers Grid */
+    .timer-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; }
+    .timer-card {
+      background: var(--card-inner);
+      border-radius: 10px;
+      padding: 12px;
+      border-left: 4px solid var(--primary-blue);
+    }
+    .timer-card.overdue { border-left-color: var(--danger); background: #2d1a1e; }
+    .timer-card-title { font-size: 0.85rem; font-weight: 700; color: var(--text-main); margin-bottom: 4px; }
+    .timer-display { font-size: 1.6rem; font-weight: 800; font-family: monospace; color: var(--text-main); margin: 4px 0 8px 0; }
+    .timer-card.overdue .timer-display { color: var(--danger); }
+    
+    .timer-actions { display: flex; gap: 6px; }
+    .btn-timer {
+      background: #334155;
+      color: white;
+      border: none;
+      padding: 6px 10px;
       border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+      flex: 1;
+    }
+    .btn-timer.primary { background: var(--primary-blue); color: #000; }
+
+    /* Barcode Intake & Pantry */
+    label { display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 4px; }
+    input[type="text"] {
+      width: 100%;
+      padding: 12px;
+      background: var(--card-inner);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: white;
       font-size: 1rem;
       margin-bottom: 10px;
     }
     .btn-action {
-      background: var(--primary);
+      width: 100%;
+      padding: 12px;
+      background: var(--accent-blue);
       color: white;
       border: none;
-      padding: 12px 16px;
+      border-radius: 8px;
+      font-weight: 800;
       font-size: 0.95rem;
-      font-weight: 700;
-      border-radius: 6px;
       cursor: pointer;
-      width: 100%;
     }
 
     /* Checklists */
-    .check-item {
+    .check-row {
       display: flex;
       align-items: center;
       gap: 12px;
       padding: 10px 0;
-      border-bottom: 1px solid var(--border);
-      font-size: 0.95rem;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      font-size: 0.9rem;
     }
-    .check-item input[type="checkbox"] { width: 22px; height: 22px; accent-color: var(--success); cursor: pointer; }
+    .check-row input[type="checkbox"] { width: 22px; height: 22px; accent-color: var(--primary-blue); cursor: pointer; }
 
-    .temp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
-
-    /* LIVE DYNAMIC TIMERS GRID */
-    .timer-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
-    .live-timer-card {
-      background: #ffffff;
-      border: 2px solid var(--border);
-      padding: 15px;
-      border-radius: 10px;
-      text-align: center;
-      position: relative;
-    }
-    .live-timer-card.overdue { border-color: var(--danger); background: #fef2f2; animation: pulse 1.5s infinite; }
-    
-    @keyframes pulse {
-      0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); }
-      70% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
-    }
-
-    .timer-title { font-weight: 700; font-size: 1rem; color: var(--primary); }
-    .live-display { font-size: 2.2rem; font-weight: 800; font-family: monospace; color: var(--primary); margin: 6px 0; }
-    .live-timer-card.overdue .live-display { color: var(--danger); }
-    
-    .status-pill {
-      display: inline-block;
-      font-size: 0.75rem;
-      font-weight: 700;
-      padding: 3px 8px;
-      border-radius: 12px;
-      margin-bottom: 8px;
-    }
-    .status-pill.ok { background: #dcfce7; color: var(--success); }
-    .status-pill.alert { background: #fee2e2; color: var(--danger); }
-
-    .btn-reset-timer {
-      background: var(--success);
-      color: white;
-      border: none;
-      padding: 10px 14px;
-      border-radius: 6px;
-      font-weight: 700;
-      cursor: pointer;
-      width: 100%;
-      margin-top: 6px;
-    }
-    .btn-remove-timer {
-      background: transparent;
-      color: var(--danger);
-      border: none;
-      font-size: 0.75rem;
-      font-weight: 700;
-      cursor: pointer;
-      margin-top: 8px;
-      text-decoration: underline;
-    }
-
-    /* Inventory Items */
-    .stock-item {
-      background: #f8fafc;
-      border-left: 4px solid var(--primary);
-      padding: 10px 12px;
-      border-radius: 4px;
-      margin-bottom: 8px;
-      border: 1px solid var(--border);
-    }
-    .allergen-badge {
-      display: inline-block;
-      background: var(--danger);
-      color: white;
-      font-size: 0.7rem;
-      font-weight: 700;
-      padding: 2px 6px;
-      border-radius: 4px;
-      margin-right: 4px;
-      text-transform: uppercase;
-    }
-    .safe-badge {
-      display: inline-block;
-      background: var(--success);
-      color: white;
-      font-size: 0.7rem;
-      font-weight: 700;
-      padding: 2px 6px;
-      border-radius: 4px;
-    }
-
-    /* Add Timer Form */
-    .add-timer-box {
-      background: #f1f5f9;
-      padding: 12px;
-      border-radius: 8px;
-      margin-bottom: 15px;
-      border: 1px dashed #cbd5e1;
-    }
-
-    @media print {
-      body { background: white; padding: 0; }
-      header { background: none; color: black; border-bottom: 2px solid #000; }
-      .btn-pdf, .nav-tabs, .add-timer-box, .btn-reset-timer, .btn-remove-timer { display: none !important; }
-      .card { border: 1px solid #ccc; box-shadow: none; page-break-inside: avoid; }
-    }
+    /* Logs */
+    .log-container { font-family: monospace; font-size: 0.8rem; color: var(--text-muted); max-height: 150px; overflow-y: auto; }
   </style>
 </head>
 <body>
 
-  <!-- Header -->
-  <header>
-    <div>
-      <h1>THE CAKE FORGE</h1>
-      <span>EHO Compliance & SFBB Operations</span>
-    </div>
-    <button class="btn-pdf" onclick="window.print()">📄 Export Audit PDF</button>
-  </header>
-
-  <!-- Navigation -->
-  <div class="nav-tabs">
-    <button class="tab-btn active" onclick="switchTab('sfbb')">📋 SFBB Checks & Temps</button>
-    <button class="tab-btn" onclick="switchTab('timers')">⏱️ Autonomous Timers</button>
-    <button class="tab-btn" onclick="switchTab('scanner')">📦 Barcode Scanner</button>
+  <!-- Tab Switcher -->
+  <div class="nav-header">
+    <button class="nav-tab active" onclick="switchTab('dashboard')">🎛️ Live Kitchen Dashboard</button>
+    <button class="nav-tab" onclick="switchTab('intake')">📦 Stock Intake & Barcode</button>
   </div>
 
-  <!-- TAB 1: SFBB CHECKS & TEMPS -->
-  <main id="tab-sfbb">
-    <div class="card">
-      <h2>🌡️ Cold Holding Daily Temperature Log</h2>
-      <div class="temp-grid">
-        <div>
-          <label for="fridge1">Main Display Fridge (°C):</label>
-          <input type="number" id="fridge1" step="0.1" placeholder="e.g. 3.4">
-        </div>
-        <div>
-          <label for="fridge2">Prep / Store Fridge (°C):</label>
-          <input type="number" id="fridge2" step="0.1" placeholder="e.g. 4.1">
-        </div>
+  <!-- Header Section -->
+  <div class="header-bar">
+    <div class="brand">
+      <h1>The Cake Forge</h1>
+      <span>Integrated HACCP Kitchen Console</span>
+    </div>
+    <div class="clock-display">
+      <div class="clock-time" id="liveClock">18:26:49</div>
+      <div class="clock-date" id="liveDate">Friday, 31 July 2026</div>
+    </div>
+  </div>
+
+  <!-- TAB 1: LIVE DASHBOARD -->
+  <main id="tab-dashboard">
+    <!-- Operational State Toggle -->
+    <section class="card">
+      <div class="card-title">SFBB Operational State:</div>
+      <div class="state-buttons">
+        <button class="btn-state active" onclick="setMode(this)">Standard Session</button>
+        <button class="btn-state" onclick="setMode(this)">🔥 Peak Production</button>
+        <button class="btn-state" onclick="setMode(this)">☀️ Warm Weather Mode</button>
       </div>
-      <div class="temp-grid">
-        <div>
-          <label for="freezer1">Main Freezer (°C):</label>
-          <input type="number" id="freezer1" step="0.1" placeholder="e.g. -19.5">
-        </div>
-        <div>
-          <label for="loggedBy">Checked By (Initials):</label>
-          <input type="text" id="loggedBy" placeholder="e.g. JS">
-        </div>
-      </div>
-      <button class="btn-action" style="background: var(--success);" onclick="logTemperatures()">Record Temperature Entry</button>
-      <div id="tempLogOutput" style="margin-top: 12px; font-size: 0.85rem; color: #334155;"></div>
-    </div>
+    </section>
 
-    <div class="card">
-      <h2>☀️ Opening Checks (SFBB)</h2>
-      <div class="check-item"><input type="checkbox" id="op1"><label for="op1">Fridges & freezers running at correct temperatures</label></div>
-      <div class="check-item"><input type="checkbox" id="op2"><label for="op2">Handwashing station clean, stocked with soap & hot water</label></div>
-      <div class="check-item"><input type="checkbox" id="op3"><label for="op3">Food prep surfaces and utensils disinfected</label></div>
-    </div>
-
-    <div class="card">
-      <h2>🌙 Closing Checks (SFBB)</h2>
-      <div class="check-item"><input type="checkbox" id="cl1"><label for="cl1">High-risk foods covered, labelled, and stored correctly</label></div>
-      <div class="check-item"><input type="checkbox" id="cl2"><label for="cl2">All surfaces, equipment, and sinks cleaned and sanitized</label></div>
-      <div class="check-item"><input type="checkbox" id="cl3"><label for="cl3">Daily temperature logs and checks signed off</label></div>
-    </div>
-  </main>
-
-  <!-- TAB 2: AUTONOMOUS CONTINUOUS TIMERS -->
-  <main id="tab-timers" style="display: none;">
-    <div class="card">
-      <h2>⏱️ Autonomous Running Kitchen Timers</h2>
+    <!-- Cold Holding Audit Log -->
+    <section class="card">
+      <div class="card-title">Cold Holding Audit Log</div>
       
-      <!-- Add Custom Timer Interface -->
-      <div class="add-timer-box">
-        <label>➕ Create Custom Timer:</label>
-        <div style="display: flex; gap: 8px;">
-          <input type="text" id="newTimerName" placeholder="Timer Label (e.g. Isomalt Temp Check)" style="flex: 2; margin: 0;">
-          <input type="number" id="newTimerMins" placeholder="Mins" style="flex: 1; margin: 0;">
-          <button onclick="addCustomTimer()" style="background: var(--primary); color: white; border: none; padding: 0 15px; border-radius: 6px; font-weight: bold; cursor: pointer;">Add</button>
+      <div class="temp-item">
+        <div class="temp-info">
+          <h3>Dedicated Business Fridge</h3>
+          <span>Target: 0.0°C to 5.0°C</span>
+        </div>
+        <div class="stepper-control">
+          <button class="btn-step" onclick="adjustTemp('f1', -0.5)">-</button>
+          <div class="temp-val" id="f1-val">4.0°C</div>
+          <button class="btn-step" onclick="adjustTemp('f1', 0.5)">+</button>
         </div>
       </div>
 
-      <div class="timer-grid" id="timerContainer">
-        <!-- Dynamic Timers Injected Here -->
+      <div class="temp-item">
+        <div class="temp-info">
+          <h3>Dedicated Business Freezer</h3>
+          <span>Target: Below -18.0°C</span>
+        </div>
+        <div class="stepper-control">
+          <button class="btn-step" onclick="adjustTemp('fz', -0.5)">-</button>
+          <div class="temp-val" id="fz-val">-18.0°C</div>
+          <button class="btn-step" onclick="adjustTemp('fz', 0.5)">+</button>
+        </div>
       </div>
-    </div>
 
-    <div class="card">
-      <h2>📜 Timer Reset & Completion Audit Log</h2>
-      <div id="timerAuditLog" style="font-size: 0.85rem; color: #475569;">
-        <p style="font-style: italic; color: #94a3b8;">No timer resets recorded yet today.</p>
+      <button class="btn-action" style="margin-top: 5px; background: var(--success);" onclick="commitTemps()">Save & Record Temperature Entry</button>
+    </section>
+
+    <!-- Interval Timers -->
+    <section class="card">
+      <div class="card-title">Interval Timers & Automated Resets</div>
+      <div class="timer-grid" id="timerGrid">
+        <!-- Dynamic Timers render here -->
       </div>
-    </div>
+    </section>
+
+    <!-- SFBB Checklists -->
+    <section class="card">
+      <div class="card-title">SFBB Daily Checks</div>
+      <div class="check-row"><input type="checkbox" id="c1"><label for="c1">Fridges & freezers running at correct temps</label></div>
+      <div class="check-row"><input type="checkbox" id="c2"><label for="c2">Handwash station fully stocked (soap/blue roll)</label></div>
+      <div class="check-row"><input type="checkbox" id="c3"><label for="c3">Sanitiser surface prep complete</label></div>
+      <div class="check-row"><input type="checkbox" id="c4"><label for="c4">Closing audit logged and high-risk items covered</label></div>
+    </section>
+
+    <!-- Audit Log -->
+    <section class="card">
+      <div class="card-title">Interval Reset Timestamp Audit</div>
+      <div class="log-container" id="auditLog">
+        <div>[System Ready] Interval tracking active.</div>
+      </div>
+    </section>
   </main>
 
-  <!-- TAB 3: BARCODE SCANNER & ALLERGEN TRACKER -->
-  <main id="tab-scanner" style="display: none;">
-    <div class="card">
-      <h2>📦 Ingredient Intake Barcode Lookup</h2>
-      <label for="barcodeInput">Scan Barcode / EAN Code:</label>
-      <input type="text" id="barcodeInput" placeholder="Scan ingredient barcode..." autofocus>
+  <!-- TAB 2: STOCK INTAKE & BARCODE SCANNER -->
+  <main id="tab-intake" style="display: none;">
+    <section class="card">
+      <div class="card-title">Ingredient Intake & Open Food Facts Lookup</div>
+      <label for="barcodeInput">Barcode / EAN Code:</label>
+      <input type="text" id="barcodeInput" placeholder="Scan or type barcode...">
+      
+      <label for="lotInput">Supplier Lot / Batch Number:</label>
+      <input type="text" id="lotInput" placeholder="e.g. L240731">
 
-      <label for="lotInput">Supplier Batch / Lot No. (Traceability):</label>
-      <input type="text" id="lotInput" placeholder="e.g. L240731-B">
+      <button class="btn-action" onclick="fetchBarcodeData()">📷 Scan Barcode / Search Item</button>
+    </section>
 
-      <button class="btn-action" onclick="handleIntakeSubmit()">Lookup Barcode & Extract 14 UK Allergens</button>
-    </div>
-
-    <div class="card">
-      <h2>🏷️ Session Pantry & PAO Log</h2>
-      <div id="pantryList">
-        <p style="color: #94a3b8; font-style: italic;">No scanned ingredients logged in this active session.</p>
+    <section class="card">
+      <div class="card-title">Logged Stock Items & 14 UK Allergens</div>
+      <div id="pantryLog" style="font-size: 0.85rem; color: var(--text-muted);">
+        <em>No items scanned in current session.</em>
       </div>
-    </div>
+    </section>
   </main>
 
   <script>
-    // Navigation Tabs
+    // Tab Navigation
     function switchTab(tabId) {
-      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-      document.querySelectorAll('main').forEach(m => m.style.display = 'none');
-      document.getElementById('tab-' + tabId).style.display = 'block';
-      event.target.classList.add('active');
+      document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+      document.getElementById('tab-dashboard').style.display = 'none';
+      document.getElementById('tab-intake').style.display = 'none';
+      
+      if (tabId === 'dashboard') {
+        document.getElementById('tab-dashboard').style.display = 'block';
+        event.target.classList.add('active');
+      } else {
+        document.getElementById('tab-intake').style.display = 'block';
+        event.target.classList.add('active');
+      }
     }
 
-    // Temperature Logging
-    let tempRecords = [];
-    function logTemperatures() {
-      const f1 = document.getElementById('fridge1').value;
-      const f2 = document.getElementById('fridge2').value;
-      const fz = document.getElementById('freezer1').value;
-      const by = document.getElementById('loggedBy').value.trim();
-
-      if (!f1 || !by) return alert("Please enter Fridge 1 temp and your initials.");
-
+    // Live Clock Engine
+    function updateClock() {
       const now = new Date();
-      const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      const recordStr = `<strong>[${timeStr}]</strong> Main Fridge: ${f1}°C | Prep Fridge: ${f2 || 'N/A'}°C | Freezer: ${fz || 'N/A'}°C — Signed: ${by}`;
-      
-      tempRecords.unshift(recordStr);
-      document.getElementById('tempLogOutput').innerHTML = tempRecords.join('<br>');
-      
-      document.getElementById('fridge1').value = '';
-      document.getElementById('fridge2').value = '';
-      document.getElementById('freezer1').value = '';
+      document.getElementById('liveClock').textContent = now.toLocaleTimeString([], { hour12: false });
+      document.getElementById('liveDate').textContent = now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Mode Toggle
+    function setMode(btn) {
+      document.querySelectorAll('.btn-state').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      logAudit(`Operational Mode changed to: ${btn.textContent}`);
     }
 
-    // --- AUTONOMOUS CONTINUOUS TIMERS ENGINE ---
-    let timersList = [
-      { id: 1, name: "Fridge Temp Check (4h)", duration: 14400, remaining: 14400 },
-      { id: 2, name: "Surface Sanitisation (2h)", duration: 7200, remaining: 7200 },
-      { id: 3, name: "SFBB 90-Min Cooling Limit", duration: 5400, remaining: 5400 },
-      { id: 4, name: "Handwashing Interval (20m)", duration: 1200, remaining: 1200 }
+    // Stepper Controls
+    let f1Temp = 4.0;
+    let fzTemp = -18.0;
+
+    function adjustTemp(target, val) {
+      if (target === 'f1') {
+        f1Temp = parseFloat((f1Temp + val).toFixed(1));
+        document.getElementById('f1-val').textContent = `${f1Temp.toFixed(1)}°C`;
+      } else {
+        fzTemp = parseFloat((fzTemp + val).toFixed(1));
+        document.getElementById('fz-val').textContent = `${fzTemp.toFixed(1)}°C`;
+      }
+    }
+
+    function commitTemps() {
+      logAudit(`Cold Holding Logged — Fridge: ${f1Temp.toFixed(1)}°C | Freezer: ${fzTemp.toFixed(1)}°C`);
+      alert("Temperatures saved to shift audit!");
+    }
+
+    // Autonomous Timers Engine
+    let timers = [
+      { id: 1, name: "Fridge Audit", duration: 43149, remaining: 40749 }, // 11:19:09
+      { id: 2, name: "Sanitisation", duration: 6378, remaining: 6378 },   // 01:46:18
+      { id: 3, name: "Oven / Bake", duration: 2700, remaining: 2700 },     // 00:45:00
+      { id: 4, name: "Bin Pull", duration: 13201, remaining: 13201 }       // 03:40:01
     ];
 
-    let timerLogs = [];
-
-    function startTimerEngine() {
-      setInterval(() => {
-        timersList.forEach(t => {
-          if (t.remaining > 0) {
-            t.remaining--;
-          }
-        });
-        renderTimers();
-      }, 1000);
-    }
+    setInterval(() => {
+      timers.forEach(t => {
+        if (t.remaining > 0) t.remaining--;
+      });
+      renderTimers();
+    }, 1000);
 
     function renderTimers() {
-      const container = document.getElementById('timerContainer');
-      if (!container) return;
-
-      container.innerHTML = timersList.map(t => {
+      const container = document.getElementById('timerGrid');
+      container.innerHTML = timers.map(t => {
         const hrs = Math.floor(t.remaining / 3600).toString().padStart(2, '0');
         const mins = Math.floor((t.remaining % 3600) / 60).toString().padStart(2, '0');
         const secs = (t.remaining % 60).toString().padStart(2, '0');
-        
         const isOverdue = t.remaining === 0;
-        const cardClass = isOverdue ? "live-timer-card overdue" : "live-timer-card";
-        const pillClass = isOverdue ? "status-pill alert" : "status-pill ok";
-        const statusText = isOverdue ? "OVERDUE" : "RUNNING";
 
         return `
-          <div class="${cardClass}">
-            <div class="timer-title">${t.name}</div>
-            <div class="${pillClass}">${statusText}</div>
-            <div class="live-display">${hrs}:${mins}:${secs}</div>
-            <button class="btn-reset-timer" onclick="manualResetTimer(${t.id})">Mark Task Done & Reset</button>
-            <button class="btn-remove-timer" onclick="removeTimer(${t.id})">Remove Timer</button>
+          <div class="timer-card ${isOverdue ? 'overdue' : ''}">
+            <div class="timer-card-title">${t.name}</div>
+            <div class="timer-display">${hrs}:${mins}:${secs}</div>
+            <div class="timer-actions">
+              <button class="btn-timer primary" onclick="resetTimer(${t.id})">Reset</button>
+              <button class="btn-timer" onclick="addMins(${t.id}, 5)">+5m</button>
+            </div>
           </div>
         `;
       }).join('');
     }
 
-    function manualResetTimer(id) {
-      const timer = timersList.find(t => t.id === id);
-      if (timer) {
-        timer.remaining = timer.duration; // Reset back to full duration
-        
-        // Audit log entry
-        const timeDone = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        timerLogs.unshift(`<strong>[${timeDone}]</strong> Completed & Reset: <em>${timer.name}</em>`);
-        
-        document.getElementById('timerAuditLog').innerHTML = timerLogs.join('<br>');
+    function resetTimer(id) {
+      const t = timers.find(x => x.id === id);
+      if (t) {
+        t.remaining = t.duration;
+        logAudit(`Timer Reset: ${t.name}`);
         renderTimers();
       }
     }
 
-    function addCustomTimer() {
-      const name = document.getElementById('newTimerName').value.trim();
-      const mins = parseInt(document.getElementById('newTimerMins').value);
-
-      if (!name || isNaN(mins) || mins <= 0) {
-        return alert("Please enter a valid label and duration in minutes.");
+    function addMins(id, mins) {
+      const t = timers.find(x => x.id === id);
+      if (t) {
+        t.remaining += mins * 60;
+        renderTimers();
       }
-
-      const seconds = mins * 60;
-      const newId = Date.now();
-      timersList.push({ id: newId, name: `${name} (${mins}m)`, duration: seconds, remaining: seconds });
-
-      document.getElementById('newTimerName').value = '';
-      document.getElementById('newTimerMins').value = '';
-      renderTimers();
     }
 
-    function removeTimer(id) {
-      timersList = timersList.filter(t => t.id !== id);
-      renderTimers();
+    // Audit Log Engine
+    function logAudit(msg) {
+      const container = document.getElementById('auditLog');
+      const time = new Date().toLocaleTimeString([], { hour12: false });
+      const newEntry = document.createElement('div');
+      newEntry.innerHTML = `[${time}] ${msg}`;
+      container.prepend(newEntry);
     }
 
-    // Start engine immediately
-    startTimerEngine();
-
-    // --- BARCODE SCANNER & OPEN FOOD FACTS ---
-    const UK_14_ALLERGENS = [
-      "celery", "crustaceans", "eggs", "fish", "lupin", "milk", 
-      "molluscs", "mustard", "nuts", "peanuts", "sesame", "soybeans", 
-      "sulfites", "gluten"
-    ];
-    let pantryItems = [];
-
-    async function handleIntakeSubmit() {
-      const barcode = document.getElementById('barcodeInput').value.trim();
+    // Barcode Fetching
+    async function fetchBarcodeData() {
+      const code = document.getElementById('barcodeInput').value.trim();
       const lot = document.getElementById('lotInput').value.trim();
-
-      if (!barcode) return alert("Please scan or enter a barcode.");
+      if (!code) return alert("Please enter or scan a barcode.");
 
       try {
-        const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${barcode}.json`);
+        const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${code}.json`);
         const data = await res.json();
-
-        if (data.status !== 1) {
-          alert("Product not found in database. Please log item manually.");
-          return;
+        
+        if (data.status === 1) {
+          const name = data.product.product_name || "Unknown Item";
+          logAudit(`Stock Scanned: ${name} (Lot: ${lot || 'N/A'})`);
+          document.getElementById('pantryLog').innerHTML = `
+            <div style="background: var(--card-inner); padding: 10px; border-radius: 8px; margin-top: 8px; color: var(--text-main);">
+              <strong>${name}</strong><br>
+              <span style="font-size:0.75rem; color: var(--text-muted);">Lot: ${lot || 'N/A'} | Date: ${new Date().toLocaleDateString('en-GB')}</span>
+            </div>
+          ` + document.getElementById('pantryLog').innerHTML;
+        } else {
+          alert("Barcode not found in database.");
         }
-
-        const product = data.product;
-        const name = product.product_name_en || product.product_name || "Unknown Product";
-        const rawAllergens = product.allergens_tags || [];
-        const detected = rawAllergens
-          .map(t => t.replace(/^en:/, '').toLowerCase())
-          .filter(t => UK_14_ALLERGENS.some(a => t.includes(a)));
-
-        const item = {
-          name: name,
-          lot: lot || "N/A",
-          date: new Date().toLocaleDateString('en-GB'),
-          allergens: [...new Set(detected)]
-        };
-
-        pantryItems.unshift(item);
-        renderPantry();
-
-        document.getElementById('barcodeInput').value = '';
-        document.getElementById('lotInput').value = '';
-        document.getElementById('barcodeInput').focus();
       } catch (e) {
-        alert("Error fetching barcode data from Open Food Facts.");
+        alert("Error connecting to barcode database.");
       }
     }
 
-    function renderPantry() {
-      const container = document.getElementById('pantryList');
-      if (pantryItems.length === 0) {
-        container.innerHTML = '<p style="color: #94a3b8; font-style: italic;">No scanned ingredients logged in this active session.</p>';
-        return;
-      }
-
-      container.innerHTML = pantryItems.map(item => {
-        const badges = item.allergens.length > 0
-          ? item.allergens.map(a => `<span class="allergen-badge">⚠️ ${a}</span>`).join('')
-          : '<span class="safe-badge">✅ No 14-Major Allergens</span>';
-
-        return `
-          <div class="stock-item">
-            <strong style="color: var(--primary);">${item.name}</strong>
-            <div style="font-size: 0.8rem; color: #64748b; margin: 4px 0;">Logged: ${item.date} | Lot/Batch: ${item.lot}</div>
-            <div>${badges}</div>
-          </div>
-        `;
-      }).join('');
-    }
+    renderTimers();
   </script>
 </body>
 </html>
