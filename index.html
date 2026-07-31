@@ -1,470 +1,660 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>The Cake Forge — Kitchen Console</title>
-  <!-- HTML5 QR / Barcode Scanner Library -->
-  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-  <style>
-    :root {
-      --bg-dark: #11161d;
-      --card-bg: #1d2530;
-      --card-inner: #27313f;
-      --primary-blue: #38bdf8;
-      --accent-blue: #0284c7;
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
-      --danger: #ef4444;
-      --success: #22c55e;
-      --border: #334155;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Cake Forge - Advanced Kitchen Hub</title>
+    <!-- HTML5 QR / Barcode Scanner Engine -->
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <style>
+        :root {
+            --bg-dark: #121212;
+            --surface: #1e1e1e;
+            --surface-accent: #2a2a2a;
+            --text-main: #ffffff;
+            --text-muted: #aaaaaa;
+            --brand-green: #00b0ff; 
+            --alert-amber: #ff9100;
+            --alert-red: #ff3d00;
+            --success: #00e676;
+            --border: #383838;
+        }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-    body { background-color: var(--bg-dark); color: var(--text-main); padding: 14px; max-width: 900px; margin: 0 auto; padding-bottom: 50px; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background-color: var(--bg-dark); color: var(--text-main); min-height: 100vh; padding: 10px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
 
-    /* Navigation Header */
-    .nav-header { display: flex; gap: 8px; margin-bottom: 12px; }
-    .nav-tab {
-      flex: 1;
-      padding: 12px;
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      color: var(--text-muted);
-      font-weight: 700;
-      border-radius: 8px;
-      cursor: pointer;
-      text-align: center;
-      font-size: 0.95rem;
-    }
-    .nav-tab.active { background: var(--accent-blue); color: white; border-color: var(--primary-blue); }
+        header {
+            background-color: var(--surface); border-radius: 8px; display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 2px solid var(--surface-accent);
+        }
 
-    /* Header Bar */
-    .header-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 14px;
-    }
-    .brand h1 { font-size: 1.3rem; font-weight: 900; letter-spacing: 0.5px; color: var(--primary-blue); text-transform: uppercase; }
-    .brand span { font-size: 0.75rem; color: var(--text-muted); display: block; }
-    
-    .clock-display { text-align: right; }
-    .clock-time { font-size: 1.4rem; font-weight: 800; font-family: monospace; color: var(--text-main); }
-    .clock-date { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; }
+        .brand h1 { font-size: 1.3rem; color: var(--brand-green); letter-spacing: 1px; }
+        .brand p { font-size: 0.75rem; color: var(--text-muted); }
+        .header-actions { display: flex; align-items: center; gap: 10px; }
+        #clock-container { text-align: right; }
+        #clock { font-size: 1.6rem; font-weight: bold; font-variant-numeric: tabular-nums; }
+        #date { font-size: 0.75rem; color: var(--text-muted); }
 
-    /* Section Cards */
-    .card {
-      background: var(--card-bg);
-      border-radius: 12px;
-      padding: 16px;
-      margin-bottom: 14px;
-      border: 1px solid rgba(255,255,255,0.05);
-    }
-    .card-title {
-      font-size: 0.85rem;
-      font-weight: 800;
-      color: var(--primary-blue);
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      margin-bottom: 12px;
-    }
+        .mode-strip {
+            background: var(--surface); border-radius: 8px; border: 1px solid var(--border); padding: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+        }
+        .mode-title { font-size: 0.85rem; font-weight: bold; color: var(--brand-green); text-transform: uppercase; }
+        .mode-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+        .btn-mode { background: var(--surface-accent); color: var(--text-muted); border: 1px solid var(--border); padding: 8px 12px; font-size: 0.8rem; font-weight: bold; border-radius: 6px; cursor: pointer; }
+        .btn-mode.active { background: var(--brand-green); color: #000; border-color: var(--brand-green); }
 
-    /* SFBB Operational State Toggles */
-    .state-buttons { display: flex; gap: 8px; }
-    .btn-state {
-      flex: 1;
-      padding: 10px 6px;
-      background: var(--card-inner);
-      border: 1px solid var(--border);
-      color: var(--text-muted);
-      border-radius: 8px;
-      font-weight: 700;
-      font-size: 0.8rem;
-      cursor: pointer;
-    }
-    .btn-state.active { background: var(--primary-blue); color: #000; font-weight: 800; border-color: var(--primary-blue); }
+        main { display: grid; grid-template-columns: 1fr; gap: 10px; width: 100%; }
+        @media (min-width: 768px) { main { grid-template-columns: 1fr 1.1fr; } }
 
-    /* Cold Holding Input Form */
-    .temp-input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
-    label { display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 4px; }
-    input[type="number"], input[type="text"] {
-      width: 100%;
-      padding: 12px;
-      background: var(--card-inner);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: white;
-      font-size: 1rem;
-    }
+        .panel { background-color: var(--surface); border-radius: 8px; padding: 15px; display: flex; flex-direction: column; border: 1px solid var(--border); }
+        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); gap: 5px; }
+        h2 { font-size: 1rem; text-transform: uppercase; letter-spacing: 0.5px; }
 
-    .btn-action {
-      width: 100%;
-      padding: 14px;
-      background: var(--success);
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-weight: 800;
-      font-size: 1rem;
-      cursor: pointer;
-    }
+        .timer-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+        .timer-card { background: var(--surface-accent); padding: 12px; border-radius: 6px; border-left: 4px solid var(--text-muted); }
+        .timer-card.active { border-left-color: var(--brand-green); }
+        .timer-card.alarm { border-left-color: var(--alert-red); animation: flash-red 1s infinite alternate; }
+        @keyframes flash-red { from { background-color: var(--surface-accent); } to { background-color: rgba(255, 61, 0, 0.2); } }
 
-    /* Interval Timers Grid */
-    .timer-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
-    .timer-card {
-      background: var(--card-inner);
-      border-radius: 10px;
-      padding: 14px;
-      border-left: 4px solid var(--primary-blue);
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-    }
-    .timer-card.overdue { border-left-color: var(--danger); background: #2d1a1e; animation: pulse 1.5s infinite; }
-    
-    @keyframes pulse {
-      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
-      70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
-    }
+        .timer-title { font-weight: bold; font-size: 0.85rem; }
+        .timer-time { font-size: 1.3rem; font-weight: bold; font-variant-numeric: tabular-nums; margin: 4px 0; }
+        .timer-controls button { background: #333; color: white; border: none; padding: 6px 10px; font-size: 0.75rem; border-radius: 4px; cursor: pointer; margin-right: 4px; margin-top: 4px; }
 
-    .timer-card-title { font-size: 0.85rem; font-weight: 700; color: var(--text-main); }
-    .timer-display { font-size: 1.8rem; font-weight: 800; font-family: monospace; color: var(--text-main); margin: 6px 0 10px 0; }
-    .timer-card.overdue .timer-display { color: var(--danger); }
-    
-    .btn-timer-reset {
-      background: var(--primary-blue);
-      color: #000;
-      border: none;
-      padding: 10px;
-      border-radius: 6px;
-      font-size: 0.85rem;
-      font-weight: 800;
-      cursor: pointer;
-      width: 100%;
-    }
+        .temp-row { background: var(--surface-accent); padding: 12px 15px; border-radius: 6px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+        .temp-controls { display: flex; align-items: center; gap: 12px; }
+        .btn-temp { background: #333; color: white; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 1.4rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .temp-display { font-size: 1.4rem; font-weight: bold; min-width: 75px; text-align: center; font-variant-numeric: tabular-nums; }
 
-    /* Checklists */
-    .check-row {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 10px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.05);
-      font-size: 0.9rem;
-    }
-    .check-row input[type="checkbox"] { width: 22px; height: 22px; accent-color: var(--primary-blue); cursor: pointer; }
+        .deviation-panel { background-color: rgba(255, 145, 0, 0.1); border: 1px solid var(--alert-amber); border-radius: 6px; padding: 10px; margin-bottom: 10px; display: none; }
+        .deviation-panel textarea { width: 100%; background: #121212; border: 1px solid var(--border); color: white; padding: 8px; border-radius: 4px; resize: none; font-size: 0.85rem; }
 
-    /* Logs */
-    .log-container { font-family: monospace; font-size: 0.8rem; color: var(--text-muted); max-height: 150px; overflow-y: auto; }
+        .checklist-item { display: flex; align-items: center; padding: 12px; background: var(--surface-accent); margin-bottom: 8px; border-radius: 6px; cursor: pointer; }
+        .checklist-item.checked { border-left: 4px solid var(--success); opacity: 0.6; }
+        .checkbox-mock { width: 22px; height: 22px; border: 2px solid #555; border-radius: 4px; margin-right: 12px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-weight: bold;}
+        .checklist-item.checked .checkbox-mock { border-color: var(--success); background-color: var(--success); color: black; }
+        .checklist-item.checked .checkbox-mock::after { content: "✓"; font-size: 0.85rem; }
+        .task-text { font-size: 0.85rem; flex-grow: 1; pointer-events: none; }
+        .timestamp { font-size: 0.75rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
 
-    /* Camera Viewfinder Styling */
-    #interactive-scanner { width: 100%; max-width: 500px; margin: 10px auto; border-radius: 8px; overflow: hidden; border: 2px solid var(--primary-blue); }
-  </style>
+        .add-task-box { background: var(--surface-accent); padding: 10px; border-radius: 6px; margin-bottom: 12px; display: flex; flex-direction: column; gap: 8px; }
+        .add-task-row { display: flex; gap: 8px; flex-wrap: wrap; }
+        .add-task-input { flex-grow: 1; background: #121212; border: 1px solid var(--border); color: #fff; padding: 8px; border-radius: 4px; font-size: 0.85rem; min-width: 140px; }
+        .add-task-select { background: #121212; border: 1px solid var(--border); color: #fff; padding: 8px; border-radius: 4px; font-size: 0.85rem; }
+
+        .spreadsheet-container { width: 100%; overflow-x: auto; border: 1px solid var(--border); border-radius: 4px; margin-top: 5px; }
+        table.ledger { width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left; min-width: 500px; }
+        table.ledger th { background-color: #252525; color: var(--text-main); padding: 10px 8px; font-weight: 600; border-bottom: 2px solid var(--border); border-right: 1px solid var(--border); }
+        table.ledger td { padding: 10px 8px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); background-color: var(--surface); }
+        table.ledger tr:nth-child(even) td { background-color: #222; }
+
+        .btn-action { background-color: var(--brand-green); color: #000; border: none; padding: 10px 16px; font-weight: bold; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
+        .btn-secondary { background-color: #444; color: #fff; border: none; padding: 10px 16px; font-weight: bold; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
+
+        #camera-scanner-view { width: 100%; max-width: 400px; margin: 8px 0; border-radius: 6px; overflow: hidden; border: 2px solid var(--brand-green); display: none; }
+
+        /* PRINT / EXPORT STYLES */
+        @media print {
+            body { background-color: #fff !important; color: #000 !important; font-size: 10pt; }
+            header, .mode-strip, .add-task-box, .btn-action, .btn-secondary, .btn-temp, .header-actions, .timer-controls, .add-task-row { display: none !important; }
+            main { display: block !important; }
+            .panel { background: #fff !important; color: #000 !important; border: 1px solid #ccc !important; margin-bottom: 15px; page-break-inside: avoid; }
+            .panel-header h2 { color: #000 !important; }
+            .checklist-item { background: #fff !important; color: #000 !important; border: 1px solid #eee !important; }
+            table.ledger th { background-color: #eee !important; color: #000 !important; }
+            table.ledger td { background-color: #fff !important; color: #000 !important; }
+            .print-header { display: block !important; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px; }
+            .timer-card { background: #fff !important; color: #000 !important; border: 1px solid #ccc !important; }
+        }
+        .print-header { display: none; }
+    </style>
 </head>
 <body>
 
-  <!-- Navigation Switcher -->
-  <div class="nav-header">
-    <button class="nav-tab active" onclick="switchTab(event, 'dashboard')">🎛️ Live Kitchen Dashboard</button>
-    <button class="nav-tab" onclick="switchTab(event, 'intake')">📦 Stock Intake & Barcode</button>
-  </div>
-
-  <!-- Header Section -->
-  <div class="header-bar">
-    <div class="brand">
-      <h1>The Cake Forge</h1>
-      <span>Integrated HACCP Kitchen Console</span>
+    <div class="print-header">
+        <h1 style="font-size:1.6rem;">THE CAKE FORGE - DAILY HACCP & SFBB LOG</h1>
+        <p id="print-date-str" style="font-size:0.9rem; margin-top:4px;"></p>
     </div>
-    <div class="clock-display">
-      <div class="clock-time" id="liveClock">--:--:--</div>
-      <div class="clock-date" id="liveDate">---</div>
+
+    <header>
+        <div class="brand">
+            <h1>THE CAKE FORGE</h1>
+            <p>Integrated HACCP Kitchen Console</p>
+        </div>
+        <div class="header-actions">
+            <button class="btn-action" onclick="exportDailyPdf()">🖨️ Export Daily Log</button>
+            <div id="clock-container">
+                <div id="clock">00:00:00</div>
+                <div id="date">Loading...</div>
+            </div>
+        </div>
+    </header>
+
+    <div class="mode-strip">
+        <div class="mode-title">SFBB Operational State:</div>
+        <div class="mode-buttons">
+            <button class="btn-mode active" id="mode-standard" onclick="setOperationalMode('STANDARD')">Standard Session</button>
+            <button class="btn-mode" id="mode-peak" onclick="setOperationalMode('PEAK')">🔥 Peak Production</button>
+            <button class="btn-mode" id="mode-warm" onclick="setOperationalMode('WARM')">☀️ Warm Weather Mode</button>
+        </div>
     </div>
-  </div>
 
-  <!-- TAB 1: LIVE DASHBOARD -->
-  <main id="tab-dashboard">
-    <!-- SFBB Operational Mode Toggles -->
-    <section class="card">
-      <div class="card-title">SFBB Operational State:</div>
-      <div class="state-buttons">
-        <button class="btn-state active" onclick="setMode(this)">Standard Session</button>
-        <button class="btn-state" onclick="setMode(this)">🔥 Peak Production</button>
-        <button class="btn-state" onclick="setMode(this)">☀️ Warm Weather Mode</button>
-      </div>
-    </section>
-
-    <!-- Cold Holding Temperature Entry (Triggers Audit & Resets Timer) -->
-    <section class="card">
-      <div class="card-title">Cold Holding Log & Automated Timer Reset</div>
-      <div class="temp-input-grid">
-        <div>
-          <label for="fridge1">Main Business Fridge (°C):</label>
-          <input type="number" id="fridge1" step="0.1" placeholder="Target: 0°C - 5°C">
-        </div>
-        <div>
-          <label for="freezer1">Main Business Freezer (°C):</label>
-          <input type="number" id="freezer1" step="0.1" placeholder="Target: Below -18°C">
-        </div>
-      </div>
-      <button class="btn-action" onclick="commitTempsAndResetTimer()">Save Temp Entry & Reset Fridge Timer</button>
-    </section>
-
-    <!-- Interval Timers Grid -->
-    <section class="card">
-      <div class="card-title">Interval Timers & Automated Resets</div>
-      <div class="timer-grid" id="timerGrid">
-        <!-- Dynamic Timers Rendered Here -->
-      </div>
-    </section>
-
-    <!-- Full SFBB Opening Checklist -->
-    <section class="card">
-      <div class="card-title">☀️ SFBB Opening Checklist Routine</div>
-      <div class="check-row"><input type="checkbox" id="op1"><label for="op1">Fridges & freezers running at target temperatures (Fridge ≤5°C / Freezer ≤-18°C)</label></div>
-      <div class="check-row"><input type="checkbox" id="op2"><label for="op2">Handwash basin clean, hot water available, soap & blue roll fully stocked</label></div>
-      <div class="check-row"><input type="checkbox" id="op3"><label for="op3">All food contact surfaces, equipment & handles sanitized with food-safe disinfectant</label></div>
-      <div class="check-row"><input type="checkbox" id="op4"><label for="op4">No signs of pest activity; dry stores intact, sealed, and off the floor</label></div>
-      <div class="check-row"><input type="checkbox" id="op5"><label for="op5">Cross-contamination controls in place (separate prep areas & utensils set)</label></div>
-      <div class="check-row"><input type="checkbox" id="op6"><label for="op6">Clean chef whites/aprons worn; long hair tied back & jewelry removed</label></div>
-    </section>
-
-    <!-- Full SFBB Closing Checklist Routine -->
-    <section class="card">
-      <div class="card-title">🌙 SFBB Closing Checklist Routine</div>
-      <div class="check-row"><input type="checkbox" id="cl1"><label for="cl1">High-risk foods covered, date-labelled, and properly chilled/stored</label></div>
-      <div class="check-row"><input type="checkbox" id="cl2"><label for="cl2">All prep tables, counters, mixers, and touchpoints thoroughly sanitized</label></div>
-      <div class="check-row"><input type="checkbox" id="cl3"><label for="cl3">Waste bins emptied, disinfected, and fresh bin liners fitted</label></div>
-      <div class="check-row"><input type="checkbox" id="cl4"><label for="cl4">Sinks wiped down, dirty cloths placed in laundry bag</label></div>
-      <div class="check-row"><input type="checkbox" id="cl5"><label for="cl5">Daily temperature entry logged and SFBB sign-off complete for EHO</label></div>
-    </section>
-
-    <!-- Audit Log -->
-    <section class="card">
-      <div class="card-title">Interval Reset & Temperature Audit Trail</div>
-      <div class="log-container" id="auditLog">
-        <div>[System Ready] Shift logging active.</div>
-      </div>
-    </section>
-  </main>
-
-  <!-- TAB 2: STOCK INTAKE & BARCODE SCANNER -->
-  <main id="tab-intake" style="display: none;">
-    <section class="card">
-      <div class="card-title">Ingredient Intake & Open Food Facts Lookup</div>
-      
-      <label for="barcodeInput">Barcode / EAN Code:</label>
-      <div style="display: flex; gap: 8px; margin-bottom: 10px;">
-        <input type="text" id="barcodeInput" placeholder="Scan or type barcode..." style="margin-bottom: 0;">
-        <button class="btn-action" style="width: auto; padding: 0 16px; background: var(--primary-blue); color: black;" onclick="fetchBarcodeData()">Lookup</button>
-      </div>
-
-      <!-- Live Camera Barcode Scanner Viewfinder -->
-      <button id="btn-toggle-camera" class="btn-action" style="background: #2563eb; margin-bottom: 10px;" onclick="toggleCameraScanner()">
-        📷 Open Live Camera Barcode Scanner
-      </button>
-      
-      <div id="interactive-scanner" style="display: none;"></div>
-
-      <label for="lotInput">Supplier Lot / Batch Number:</label>
-      <input type="text" id="lotInput" placeholder="e.g. L240731">
-    </section>
-
-    <section class="card">
-      <div class="card-title">Logged Stock Items & 14 UK Allergens</div>
-      <div id="pantryLog" style="font-size: 0.85rem; color: var(--text-muted);">
-        <em>No items scanned in current session.</em>
-      </div>
-    </section>
-  </main>
-
-  <script>
-    // Tab Navigation
-    function switchTab(evt, tabId) {
-      document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
-      document.getElementById('tab-dashboard').style.display = 'none';
-      document.getElementById('tab-intake').style.display = 'none';
-      
-      if (tabId === 'dashboard') {
-        document.getElementById('tab-dashboard').style.display = 'block';
-      } else {
-        document.getElementById('tab-intake').style.display = 'block';
-      }
-      evt.target.classList.add('active');
-    }
-
-    // Live Clock Engine
-    function updateClock() {
-      const now = new Date();
-      document.getElementById('liveClock').textContent = now.toLocaleTimeString([], { hour12: false });
-      document.getElementById('liveDate').textContent = now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-    }
-    setInterval(updateClock, 1000);
-    updateClock();
-
-    // Mode Toggle
-    function setMode(btn) {
-      document.querySelectorAll('.btn-state').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      logAudit(`Operational Mode changed to: ${btn.textContent}`);
-    }
-
-    // Autonomous Timers Engine
-    let timers = [
-      { id: 1, name: "Fridge Audit", duration: 14400, remaining: 14400 }, // 4h
-      { id: 2, name: "Sanitisation", duration: 7200, remaining: 7200 },   // 2h
-      { id: 3, name: "Oven / Bake", duration: 2700, remaining: 2700 },     // 45m
-      { id: 4, name: "Bin Pull", duration: 13200, remaining: 13200 }       // 3h40m
-    ];
-
-    setInterval(() => {
-      timers.forEach(t => {
-        if (t.remaining > 0) t.remaining--;
-      });
-      renderTimers();
-    }, 1000);
-
-    function renderTimers() {
-      const container = document.getElementById('timerGrid');
-      if (!container) return;
-      container.innerHTML = timers.map(t => {
-        const hrs = Math.floor(t.remaining / 3600).toString().padStart(2, '0');
-        const mins = Math.floor((t.remaining % 3600) / 60).toString().padStart(2, '0');
-        const secs = (t.remaining % 60).toString().padStart(2, '0');
-        const isOverdue = t.remaining === 0;
-
-        return `
-          <div class="timer-card ${isOverdue ? 'overdue' : ''}">
+    <main>
+        <!-- COLD HOLDING -->
+        <section class="panel">
+            <div class="panel-header">
+                <h2>Cold Holding Audit Log</h2>
+            </div>
             <div>
-              <div class="timer-card-title">${t.name}</div>
-              <div class="timer-display">${hrs}:${mins}:${secs}</div>
-            </div>
-            <button class="btn-timer-reset" onclick="resetTimer(${t.id})">RESET TIMER</button>
-          </div>
-        `;
-      }).join('');
-    }
+                <div class="temp-row">
+                    <div>
+                        <h4 style="font-size:0.95rem;">Dedicated Business Fridge</h4>
+                        <p style="font-size:0.75rem; color:var(--text-muted);">Target: 0.0°C to 5.0°C</p>
+                    </div>
+                    <div class="temp-controls">
+                        <button class="btn-temp" onclick="adjustTemp('fridge', -0.5)">-</button>
+                        <div class="temp-display" id="fridge-val">4.0°C</div>
+                        <button class="btn-temp" onclick="adjustTemp('fridge', 0.5)">+</button>
+                    </div>
+                </div>
+                <div class="deviation-panel" id="fridge-deviation">
+                    <p style="font-size:0.8rem; color:var(--alert-amber); margin-bottom:5px;">⚠️ DEVIATION (&gt;5.0°C) - Mandatory Action Log Required:</p>
+                    <textarea id="fridge-action" placeholder="Logged action taken..."></textarea>
+                </div>
 
-    function resetTimer(id) {
-      const t = timers.find(x => x.id === id);
-      if (t) {
-        t.remaining = t.duration;
-        logAudit(`Timer Reset: ${t.name}`);
+                <div class="temp-row">
+                    <div>
+                        <h4 style="font-size:0.95rem;">Dedicated Business Freezer</h4>
+                        <p style="font-size:0.75rem; color:var(--text-muted);">Target: Below -18.0°C</p>
+                    </div>
+                    <div class="temp-controls">
+                        <button class="btn-temp" onclick="adjustTemp('freezer', -1)">-</button>
+                        <div class="temp-display" id="freezer-val">-18.0°C</div>
+                        <button class="btn-temp" onclick="adjustTemp('freezer', 1)">+</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TIMERS & AUTOMATED ROUTINE AUDIT -->
+        <section class="panel">
+            <div class="panel-header">
+                <h2>Interval Timers & Automated Resets</h2>
+            </div>
+            <div class="timer-grid">
+                <div class="timer-card active" id="timer-fridge">
+                    <div class="timer-title">Fridge Audit</div>
+                    <div class="timer-time" id="time-fridge">12:00:00</div>
+                    <div class="timer-controls"><button onclick="triggerRoutineReset('fridge')">Reset</button></div>
+                </div>
+                <div class="timer-card active" id="timer-sanitize">
+                    <div class="timer-title">Sanitisation</div>
+                    <div class="timer-time" id="time-sanitize">02:00:00</div>
+                    <div class="timer-controls"><button onclick="triggerRoutineReset('sanitize')">Reset</button></div>
+                </div>
+                <div class="timer-card" id="timer-bake">
+                    <div class="timer-title">Oven / Bake</div>
+                    <div class="timer-time" id="time-bake">00:45:00</div>
+                    <div class="timer-controls">
+                        <button onclick="adjustBakeTimer(5)">+5m</button>
+                        <button onclick="toggleBakeTimer()" id="btn-bake-toggle">Start</button>
+                    </div>
+                </div>
+                <div class="timer-card active" id="timer-waste">
+                    <div class="timer-title">Bin Pull</div>
+                    <div class="timer-time" id="time-waste">04:00:00</div>
+                    <div class="timer-controls"><button onclick="triggerRoutineReset('waste')">Reset</button></div>
+                </div>
+            </div>
+
+            <!-- AUTOMATED ROUTINE AUDIT LOG TABLE -->
+            <div class="spreadsheet-container" style="margin-top: 15px;">
+                <h4 style="font-size:0.75rem; color:var(--brand-green); margin: 8px 0;">INTERVAL RESET TIMESTAMP AUDIT</h4>
+                <table class="ledger">
+                    <thead>
+                        <tr>
+                            <th style="width: 20%;">Time</th>
+                            <th>Automated Action Recorded</th>
+                        </tr>
+                    </thead>
+                    <tbody id="routine-log-body"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- OPENED GOODS & BARCODE TRACKER -->
+        <section class="panel">
+            <div class="panel-header">
+                <h2>Opened Goods & Barcode Shelf-Life Tracker</h2>
+            </div>
+
+            <div class="add-task-box">
+                <span style="font-size:0.75rem; font-weight:bold; color:var(--brand-green);">+ OPEN NEW INGREDIENT (Scan Barcode or Type Name)</span>
+                <div class="add-task-row">
+                    <input type="text" id="barcode-input" class="add-task-input" placeholder="Scan Barcode (EAN) or Type Name..." style="flex-grow:2;">
+                    <input type="number" id="pao-months" class="add-task-input" placeholder="PAO (Months)" style="max-width:110px;" value="3">
+                    <button class="btn-action" onclick="processBarcodeEntry()">Log Opened Item</button>
+                    <button class="btn-secondary" id="btn-cam-toggle" onclick="toggleCameraScanner()">📷 Camera</button>
+                </div>
+                <div id="camera-scanner-view"></div>
+            </div>
+
+            <div class="spreadsheet-container">
+                <table class="ledger">
+                    <thead>
+                        <tr>
+                            <th>Opened Date</th>
+                            <th>Ingredient / Product</th>
+                            <th>Barcode</th>
+                            <th>Calculated Expiry</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pantry-log-body"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- BATCH PRODUCTION LOG -->
+        <section class="panel">
+            <div class="panel-header">
+                <h2>Cooked / Made Batch Records</h2>
+            </div>
+
+            <div class="add-task-box">
+                <span style="font-size:0.75rem; font-weight:bold; color:var(--brand-green);">+ LOG NEW BATCH (Sponges / Ganache / Fillings)</span>
+                <div class="add-task-row">
+                    <input type="text" id="batch-item" class="add-task-input" placeholder="e.g., Chocolate Ganache / Victoria Sponge">
+                    <input type="text" id="batch-code" class="add-task-input" placeholder="Batch ID / Lot #" style="max-width:110px;">
+                    <input type="text" id="batch-temp" class="add-task-input" placeholder="Core Temp (°C)" style="max-width:100px;">
+                    <select id="batch-storage" class="add-task-select">
+                        <option value="Ambient">Ambient</option>
+                        <option value="Fridge">Fridge</option>
+                        <option value="Freezer">Freezer</option>
+                    </select>
+                    <button class="btn-action" onclick="logNewBatch()">Log</button>
+                </div>
+            </div>
+
+            <div class="spreadsheet-container">
+                <table class="ledger">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Item Description</th>
+                            <th>Batch ID</th>
+                            <th>Core Temp</th>
+                            <th>Storage</th>
+                        </tr>
+                    </thead>
+                    <tbody id="batch-log-body"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- DYNAMIC CHECKLIST -->
+        <section class="panel">
+            <div class="panel-header">
+                <h2>SFBB Safety Checklists</h2>
+                <span id="current-day-label" style="font-size:0.8rem; color:var(--brand-green); font-weight:bold;">---</span>
+            </div>
+
+            <div class="add-task-box">
+                <span style="font-size:0.75rem; font-weight:bold; color:var(--brand-green);">+ ADD CUSTOM CHECKLIST ITEM</span>
+                <div class="add-task-row">
+                    <input type="text" id="new-task-text" class="add-task-input" placeholder="e.g. Isomalt temp check...">
+                    <button class="btn-action" onclick="addCustomTask()">Add</button>
+                </div>
+            </div>
+
+            <div id="checklist-container"></div>
+        </section>
+    </main>
+
+    <script>
+        const BARCODE_DB = {
+            "5010029000148": { name: "Self Raising Flour 1.5kg", defaultPaoMonths: 3 },
+            "5000128001234": { name: "Callebaut 811 Dark Callets", defaultPaoMonths: 12 },
+            "5010011000010": { name: "Icing Sugar 1kg", defaultPaoMonths: 6 }
+        };
+
+        let state = {
+            mode: "STANDARD",
+            fridgeTemp: 4.0, 
+            freezerTemp: -18.0,
+            fridgeAction: "",
+            completedTasks: {},
+            customTasks: [],
+            batches: [],
+            openedIngredients: [],
+            routineAuditLog: [],
+            timers: { fridge: 12 * 3600, sanitize: 2 * 3600, waste: 4 * 3600, bake: 45 * 60 },
+            bakeTimerRunning: false,
+            intervals: { fridge: 12, sanitize: 2, waste: 4 },
+            preSessionChecklist: [
+                "Clear family items and personal belongings out of production spaces.",
+                "Verify absolute pet isolation from kitchen and food storage zones.",
+                "Disinfect primary food contact surfaces & equipment (BS EN 1276).",
+                "Verify clean chef whites/apron put on & hair tied back/covered.",
+                "Handwashing sink stocked with warm water, anti-bacterial soap, & paper towels.",
+                "Fridge & freezer operating within target temp ranges (Fridge <5°C, Freezer <-18°C).",
+                "Verify clean mixing bowls, pans, and staging gear ready."
+            ],
+            closingChecklist: [
+                "All food covered, labeled, and dated before cold holding storage.",
+                "Sanitise all food contact surfaces, mixers, and touchpoints (BS EN 1276).",
+                "Empty food waste and take bin liner to external waste bin.",
+                "Sweep and mop kitchen floor.",
+                "Ensure all appliances (ovens, hobs, warmers) are safely turned off."
+            ]
+        };
+
+        // Live Clock Engine
+        function updateClock() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString([], { hour12: false });
+            const dateStr = now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+            
+            document.getElementById('clock').textContent = timeStr;
+            document.getElementById('date').textContent = dateStr;
+            document.getElementById('current-day-label').textContent = dateStr.toUpperCase();
+            document.getElementById('print-date-str').textContent = dateStr;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Operational Mode Switcher
+        function setOperationalMode(mode) {
+            state.mode = mode;
+            document.querySelectorAll('.btn-mode').forEach(b => b.classList.remove('active'));
+            if (mode === 'STANDARD') {
+                document.getElementById('mode-standard').classList.add('active');
+                state.intervals = { fridge: 12, sanitize: 2, waste: 4 };
+            } else if (mode === 'PEAK') {
+                document.getElementById('mode-peak').classList.add('active');
+                state.intervals = { fridge: 8, sanitize: 1.5, waste: 3 };
+            } else if (mode === 'WARM') {
+                document.getElementById('mode-warm').classList.add('active');
+                state.intervals = { fridge: 4, sanitize: 1, waste: 2 };
+            }
+            logRoutineAction(`SFBB Operational State changed to ${mode} Mode.`);
+        }
+
+        // Cold Holding Temperature Steppers
+        function adjustTemp(type, delta) {
+            if (type === 'fridge') {
+                state.fridgeTemp = Math.round((state.fridgeTemp + delta) * 10) / 10;
+                document.getElementById('fridge-val').textContent = state.fridgeTemp.toFixed(1) + '°C';
+                
+                const devPanel = document.getElementById('fridge-deviation');
+                if (state.fridgeTemp > 5.0) {
+                    devPanel.style.display = 'block';
+                } else {
+                    devPanel.style.display = 'none';
+                }
+                triggerRoutineReset('fridge');
+            } else if (type === 'freezer') {
+                state.freezerTemp = Math.round((state.freezerTemp + delta) * 10) / 10;
+                document.getElementById('freezer-val').textContent = state.freezerTemp.toFixed(1) + '°C';
+            }
+        }
+
+        // Timer Interval Engine
+        setInterval(() => {
+            ['fridge', 'sanitize', 'waste'].forEach(t => {
+                if (state.timers[t] > 0) state.timers[t]--;
+            });
+
+            if (state.bakeTimerRunning && state.timers.bake > 0) {
+                state.timers.bake--;
+            }
+
+            renderTimers();
+        }, 1000);
+
+        function renderTimers() {
+            ['fridge', 'sanitize', 'waste', 'bake'].forEach(t => {
+                const sec = state.timers[t];
+                const h = Math.floor(sec / 3600).toString().padStart(2, '0');
+                const m = Math.floor((sec % 3600) / 60).toString().padStart(2, '0');
+                const s = (sec % 60).toString().padStart(2, '0');
+                
+                const elTime = document.getElementById(`time-${t}`);
+                const elCard = document.getElementById(`timer-${t}`);
+                if (elTime) elTime.textContent = `${h}:${m}:${s}`;
+
+                if (sec === 0 && elCard) {
+                    elCard.classList.add('alarm');
+                } else if (elCard) {
+                    elCard.classList.remove('alarm');
+                }
+            });
+        }
+
+        function triggerRoutineReset(type) {
+            const hrs = state.intervals[type] || 2;
+            state.timers[type] = hrs * 3600;
+            const names = { fridge: 'Fridge Audit Logged & Reset', sanitize: 'Sanitisation Complete & Reset', waste: 'Bin Pull Executed & Reset' };
+            logRoutineAction(names[type] || `${type} reset`);
+            renderTimers();
+        }
+
+        function adjustBakeTimer(mins) {
+            state.timers.bake += mins * 60;
+            renderTimers();
+        }
+
+        function toggleBakeTimer() {
+            state.bakeTimerRunning = !state.bakeTimerRunning;
+            const btn = document.getElementById('btn-bake-toggle');
+            btn.textContent = state.bakeTimerRunning ? 'Pause' : 'Start';
+            document.getElementById('timer-bake').classList.toggle('active', state.bakeTimerRunning);
+        }
+
+        function logRoutineAction(actionText) {
+            const time = new Date().toLocaleTimeString([], { hour12: false });
+            state.routineAuditLog.unshift({ time, actionText });
+            
+            const tbody = document.getElementById('routine-log-body');
+            tbody.innerHTML = state.routineAuditLog.map(r => `
+                <tr>
+                    <td><strong>${r.time}</strong></td>
+                    <td>${r.actionText}</td>
+                </tr>
+            `).join('');
+        }
+
+        // Opened Goods & Barcode Tracker
+        async function processBarcodeEntry() {
+            const input = document.getElementById('barcode-input').value.trim();
+            const pao = parseInt(document.getElementById('pao-months').value) || 3;
+            if (!input) return alert("Please scan or enter product name/EAN code.");
+
+            let name = input;
+            let code = input;
+
+            if (BARCODE_DB[input]) {
+                name = BARCODE_DB[input].name;
+            } else if (/^\d+$/.test(input)) {
+                try {
+                    const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${input}.json`);
+                    const data = await res.json();
+                    if (data.status === 1) {
+                        name = data.product.product_name || `Item ${input}`;
+                    }
+                } catch(e) {}
+            }
+
+            const now = new Date();
+            const exp = new Date(now);
+            exp.setMonth(exp.getMonth() + pao);
+
+            state.openedIngredients.unshift({
+                opened: now.toLocaleDateString('en-GB'),
+                name: name,
+                code: code,
+                expiry: exp.toLocaleDateString('en-GB'),
+                status: 'OK'
+            });
+
+            document.getElementById('barcode-input').value = '';
+            renderPantryLog();
+        }
+
+        function renderPantryLog() {
+            const tbody = document.getElementById('pantry-log-body');
+            tbody.innerHTML = state.openedIngredients.map(item => `
+                <tr>
+                    <td>${item.opened}</td>
+                    <td><strong>${item.name}</strong></td>
+                    <td><code>${item.code}</code></td>
+                    <td>${item.expiry}</td>
+                    <td><span style="color:var(--success); font-weight:bold;">${item.status}</span></td>
+                </tr>
+            `).join('');
+        }
+
+        // Camera Scanner Integration
+        let html5QrCode = null;
+        let camActive = false;
+
+        function toggleCameraScanner() {
+            const camView = document.getElementById('camera-scanner-view');
+            const btn = document.getElementById('btn-cam-toggle');
+
+            if (!camActive) {
+                camView.style.display = 'block';
+                btn.textContent = '❌ Close';
+                html5QrCode = new Html5Qrcode("camera-scanner-view");
+                html5QrCode.start(
+                    { facingMode: "environment" },
+                    { fps: 10, qrbox: { width: 250, height: 150 } },
+                    (decodedText) => {
+                        document.getElementById('barcode-input').value = decodedText;
+                        toggleCameraScanner();
+                        processBarcodeEntry();
+                    },
+                    (err) => {}
+                ).catch(() => {
+                    alert("Unable to open camera.");
+                    camView.style.display = 'none';
+                    btn.textContent = '📷 Camera';
+                    camActive = false;
+                });
+                camActive = true;
+            } else {
+                if (html5QrCode) {
+                    html5QrCode.stop().then(() => {
+                        html5QrCode.clear();
+                        camView.style.display = 'none';
+                        btn.textContent = '📷 Camera';
+                        camActive = false;
+                    });
+                }
+            }
+        }
+
+        // Batch Records Logging
+        function logNewBatch() {
+            const item = document.getElementById('batch-item').value.trim();
+            const code = document.getElementById('batch-code').value.trim();
+            const temp = document.getElementById('batch-temp').value.trim();
+            const storage = document.getElementById('batch-storage').value;
+
+            if (!item) return alert("Please describe the batch item.");
+
+            const time = new Date().toLocaleTimeString([], { hour12: false });
+            state.batches.unshift({ time, item, code: code || 'N/A', temp: temp ? `${temp}°C` : 'N/A', storage });
+
+            document.getElementById('batch-item').value = '';
+            document.getElementById('batch-code').value = '';
+            document.getElementById('batch-temp').value = '';
+
+            const tbody = document.getElementById('batch-log-body');
+            tbody.innerHTML = state.batches.map(b => `
+                <tr>
+                    <td><strong>${b.time}</strong></td>
+                    <td>${b.item}</td>
+                    <td><code>${b.code}</code></td>
+                    <td>${b.temp}</td>
+                    <td>${b.storage}</td>
+                </tr>
+            `).join('');
+        }
+
+        // Dynamic Checklists
+        function renderChecklists() {
+            const container = document.getElementById('checklist-container');
+            let html = '<h4 style="font-size:0.8rem; color:var(--brand-green); margin:10px 0 6px 0;">PRE-SESSION ROUTINE</h4>';
+
+            state.preSessionChecklist.forEach((task, idx) => {
+                const key = `pre_${idx}`;
+                const isDone = state.completedTasks[key];
+                html += `
+                    <div class="checklist-item ${isDone ? 'checked' : ''}" onclick="toggleTask('${key}')">
+                        <div class="checkbox-mock"></div>
+                        <div class="task-text">${task}</div>
+                        ${isDone ? `<div class="timestamp">${isDone}</div>` : ''}
+                    </div>
+                `;
+            });
+
+            if (state.customTasks.length > 0) {
+                html += '<h4 style="font-size:0.8rem; color:var(--brand-green); margin:14px 0 6px 0;">CUSTOM ROUTINES</h4>';
+                state.customTasks.forEach((task, idx) => {
+                    const key = `custom_${idx}`;
+                    const isDone = state.completedTasks[key];
+                    html += `
+                        <div class="checklist-item ${isDone ? 'checked' : ''}" onclick="toggleTask('${key}')">
+                            <div class="checkbox-mock"></div>
+                            <div class="task-text">${task}</div>
+                            ${isDone ? `<div class="timestamp">${isDone}</div>` : ''}
+                        </div>
+                    `;
+                });
+            }
+
+            html += '<h4 style="font-size:0.8rem; color:var(--brand-green); margin:14px 0 6px 0;">CLOSING ROUTINE</h4>';
+            state.closingChecklist.forEach((task, idx) => {
+                const key = `close_${idx}`;
+                const isDone = state.completedTasks[key];
+                html += `
+                    <div class="checklist-item ${isDone ? 'checked' : ''}" onclick="toggleTask('${key}')">
+                        <div class="checkbox-mock"></div>
+                        <div class="task-text">${task}</div>
+                        ${isDone ? `<div class="timestamp">${isDone}</div>` : ''}
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function toggleTask(key) {
+            if (state.completedTasks[key]) {
+                delete state.completedTasks[key];
+            } else {
+                state.completedTasks[key] = new Date().toLocaleTimeString([], { hour12: false });
+            }
+            renderChecklists();
+        }
+
+        function addCustomTask() {
+            const input = document.getElementById('new-task-text');
+            const text = input.value.trim();
+            if (text) {
+                state.customTasks.push(text);
+                input.value = '';
+                renderChecklists();
+            }
+        }
+
+        function exportDailyPdf() {
+            window.print();
+        }
+
+        // Initial Initialization
+        logRoutineAction("System Initialized. Standard SFBB Monitoring active.");
+        renderChecklists();
         renderTimers();
-      }
-    }
-
-    // Combined Temperature Logging + Automatic Timer Reset
-    function commitTempsAndResetTimer() {
-      const f1 = document.getElementById('fridge1').value;
-      const fz = document.getElementById('freezer1').value;
-
-      if (!f1) {
-        alert("Please enter Main Fridge temperature.");
-        return;
-      }
-
-      logAudit(`Cold Holding Logged — Fridge: ${f1}°C | Freezer: ${fz ? fz + '°C' : 'N/A'}`);
-      
-      // Reset Fridge Audit Timer Automatically (ID 1)
-      resetTimer(1);
-
-      document.getElementById('fridge1').value = '';
-      document.getElementById('freezer1').value = '';
-      alert("Temperature logged and Fridge Audit timer reset!");
-    }
-
-    // Audit Log Engine
-    function logAudit(msg) {
-      const container = document.getElementById('auditLog');
-      if (!container) return;
-      const time = new Date().toLocaleTimeString([], { hour12: false });
-      const newEntry = document.createElement('div');
-      newEntry.innerHTML = `[${time}] ${msg}`;
-      container.prepend(newEntry);
-    }
-
-    // Barcode Fetching via Open Food Facts API
-    async function fetchBarcodeData() {
-      const code = document.getElementById('barcodeInput').value.trim();
-      const lot = document.getElementById('lotInput').value.trim();
-      
-      if (!code) {
-        alert("Please enter or scan a barcode number first.");
-        return;
-      }
-
-      try {
-        const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${code}.json`);
-        const data = await res.json();
-        
-        if (data.status === 1) {
-          const name = data.product.product_name || "Unknown Item";
-          logAudit(`Stock Scanned: ${name} (Lot: ${lot || 'N/A'})`);
-          
-          const pantryLog = document.getElementById('pantryLog');
-          const entry = `
-            <div style="background: var(--card-inner); padding: 10px; border-radius: 8px; margin-top: 8px; color: var(--text-main);">
-              <strong>${name}</strong><br>
-              <span style="font-size:0.75rem; color: var(--text-muted);">Lot: ${lot || 'N/A'} | Date: ${new Date().toLocaleDateString('en-GB')}</span>
-            </div>
-          `;
-          pantryLog.innerHTML = entry + (pantryLog.innerHTML.includes('No items scanned') ? '' : pantryLog.innerHTML);
-          
-          document.getElementById('barcodeInput').value = '';
-          document.getElementById('lotInput').value = '';
-        } else {
-          alert("Barcode not found in Open Food Facts database.");
-        }
-      } catch (e) {
-        alert("Error connecting to barcode database.");
-      }
-    }
-
-    // Live Camera Scanner Engine (HTML5-QRCode)
-    let html5QrCode = null;
-    let cameraActive = false;
-
-    function toggleCameraScanner() {
-      const scannerDiv = document.getElementById('interactive-scanner');
-      const btn = document.getElementById('btn-toggle-camera');
-
-      if (!cameraActive) {
-        scannerDiv.style.display = 'block';
-        btn.textContent = '❌ Close Camera Scanner';
-        html5QrCode = new Html5Qrcode("interactive-scanner");
-        
-        html5QrCode.start(
-          { facingMode: "environment" }, 
-          { fps: 10, qrbox: { width: 250, height: 150 } },
-          (decodedText) => {
-            document.getElementById('barcodeInput').value = decodedText;
-            toggleCameraScanner(); // Close scanner once barcode is captured
-            fetchBarcodeData();    // Auto fetch product data
-          },
-          (errorMessage) => { /* ignore frame scanning errors */ }
-        ).catch(err => {
-          alert("Unable to access camera. Please check browser permissions.");
-          scannerDiv.style.display = 'none';
-          btn.textContent = '📷 Open Live Camera Barcode Scanner';
-          cameraActive = false;
-        });
-
-        cameraActive = true;
-      } else {
-        if (html5QrCode) {
-          html5QrCode.stop().then(() => {
-            html5QrCode.clear();
-            scannerDiv.style.display = 'none';
-            btn.textContent = '📷 Open Live Camera Barcode Scanner';
-            cameraActive = false;
-          });
-        }
-      }
-    }
-
-    renderTimers();
-  </script>
+    </script>
 </body>
 </html>
