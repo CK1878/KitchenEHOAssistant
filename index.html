@@ -39,7 +39,7 @@
         }
         .mode-title { font-size: 0.85rem; font-weight: bold; color: var(--brand-green); text-transform: uppercase; }
         .mode-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
-        .btn-mode { background: var(--surface-accent); color: var(--text-muted); border: 1px solid var(--border); padding: 8px 12px; font-size: 0.8rem; font-weight: bold; border-radius: 6px; cursor: pointer; }
+        .btn-mode { background: var(--surface-accent); color: var(--text-muted); border: 1px solid var(--border); padding: 8px 12px; font-size: 0.8rem; font-weight: bold; border-radius: 6px; cursor: pointer; transition: all 0.2s ease; }
         .btn-mode.active { background: var(--brand-green); color: #000; border-color: var(--brand-green); }
 
         main { display: grid; grid-template-columns: 1fr; gap: 10px; width: 100%; }
@@ -244,6 +244,7 @@
                             <th>Opened Date</th>
                             <th>Ingredient / Product</th>
                             <th>Barcode</th>
+                            <th>14 Allergens</th>
                             <th>Calculated Expiry</th>
                             <th>Status</th>
                         </tr>
@@ -311,9 +312,9 @@
 
     <script>
         const BARCODE_DB = {
-            "5010029000148": { name: "Self Raising Flour 1.5kg", defaultPaoMonths: 3 },
-            "5000128001234": { name: "Callebaut 811 Dark Callets", defaultPaoMonths: 12 },
-            "5010011000010": { name: "Icing Sugar 1kg", defaultPaoMonths: 6 }
+            "5010029000148": { name: "Self Raising Flour 1.5kg", defaultPaoMonths: 3, allergens: ["Gluten"] },
+            "5000128001234": { name: "Callebaut 811 Dark Callets", defaultPaoMonths: 12, allergens: ["Soya", "Milk (Trace)"] },
+            "5010011000010": { name: "Icing Sugar 1kg", defaultPaoMonths: 6, allergens: [] }
         };
 
         let state = {
@@ -361,10 +362,11 @@
         setInterval(updateClock, 1000);
         updateClock();
 
-        // Operational Mode Switcher
+        // Dynamic Operational Mode Switcher with Auto-Adjusting Timers
         function setOperationalMode(mode) {
             state.mode = mode;
             document.querySelectorAll('.btn-mode').forEach(b => b.classList.remove('active'));
+            
             if (mode === 'STANDARD') {
                 document.getElementById('mode-standard').classList.add('active');
                 state.intervals = { fridge: 12, sanitize: 2, waste: 4 };
@@ -375,7 +377,14 @@
                 document.getElementById('mode-warm').classList.add('active');
                 state.intervals = { fridge: 4, sanitize: 1, waste: 2 };
             }
-            logRoutineAction(`SFBB Operational State changed to ${mode} Mode.`);
+
+            // Dynamically recalculate active intervals immediately
+            state.timers.fridge = state.intervals.fridge * 3600;
+            state.timers.sanitize = state.intervals.sanitize * 3600;
+            state.timers.waste = state.intervals.waste * 3600;
+
+            renderTimers();
+            logRoutineAction(`SFBB Mode updated to ${mode}. Timers re-indexed: Fridge (${state.intervals.fridge}h), Sanitise (${state.intervals.sanitize}h), Bins (${state.intervals.waste}h).`);
         }
 
         // Cold Holding Temperature Steppers
@@ -470,15 +479,24 @@
 
             let name = input;
             let code = input;
+            let allergens = [];
 
             if (BARCODE_DB[input]) {
                 name = BARCODE_DB[input].name;
+                allergens = BARCODE_DB[input].allergens || [];
             } else if (/^\d+$/.test(input)) {
                 try {
                     const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${input}.json`);
                     const data = await res.json();
                     if (data.status === 1) {
                         name = data.product.product_name || `Item ${input}`;
+                        
+                        // Auto-detect allergens from OpenFoodFacts if present
+                        const tags = data.product.allergens_tags || [];
+                        tags.forEach(t => {
+                            const cleanTag = t.replace('en:', '').replace(/-/g, ' ');
+                            allergens.push(cleanTag.charAt(0).toUpperCase() + cleanTag.slice(1));
+                        });
                     }
                 } catch(e) {}
             }
@@ -492,6 +510,7 @@
                 name: name,
                 code: code,
                 expiry: exp.toLocaleDateString('en-GB'),
+                allergens: allergens,
                 status: 'OK'
             });
 
@@ -501,15 +520,22 @@
 
         function renderPantryLog() {
             const tbody = document.getElementById('pantry-log-body');
-            tbody.innerHTML = state.openedIngredients.map(item => `
-                <tr>
-                    <td>${item.opened}</td>
-                    <td><strong>${item.name}</strong></td>
-                    <td><code>${item.code}</code></td>
-                    <td>${item.expiry}</td>
-                    <td><span style="color:var(--success); font-weight:bold;">${item.status}</span></td>
-                </tr>
-            `).join('');
+            tbody.innerHTML = state.openedIngredients.map(item => {
+                const allergenBadges = item.allergens && item.allergens.length > 0
+                    ? item.allergens.map(a => `<span style="background:var(--alert-red); color:#fff; font-size:0.7rem; padding:2px 6px; border-radius:4px; font-weight:bold; margin-right:4px; display:inline-block; margin-bottom:2px;">${a}</span>`).join('')
+                    : '<span style="color:var(--text-muted); font-size:0.75rem;">None</span>';
+
+                return `
+                    <tr>
+                        <td>${item.opened}</td>
+                        <td><strong>${item.name}</strong></td>
+                        <td><code>${item.code}</code></td>
+                        <td>${allergenBadges}</td>
+                        <td>${item.expiry}</td>
+                        <td><span style="color:var(--success); font-weight:bold;">${item.status}</span></td>
+                    </tr>
+                `;
+            }).join('');
         }
 
         // Camera Scanner Integration
