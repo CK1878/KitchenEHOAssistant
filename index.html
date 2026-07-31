@@ -3,291 +3,432 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>The Cake Forge — Kitchen Ops & EHO Compliance Assistant</title>
+  <title>The Cake Forge — Kitchen Management & EHO Hub</title>
   <style>
     :root {
-      --bg-color: #f4f6f8;
+      --primary: #1e293b;
+      --accent: #d97706;
+      --success: #16a34a;
+      --danger: #dc2626;
+      --bg: #f8fafc;
       --card-bg: #ffffff;
-      --primary: #2c3e50;
-      --accent: #d35400;
-      --success: #27ae60;
-      --warning: #f39c12;
-      --danger: #c0392b;
-      --text: #333333;
       --border: #e2e8f0;
+      --text: #0f172a;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background-color: var(--bg-color); color: var(--text); padding: 15px; max-width: 900px; margin: 0 auto; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); padding: 15px; max-width: 900px; margin: 0 auto; padding-bottom: 60px; }
 
     /* Header & Branding */
     header {
       background: var(--primary);
       color: white;
-      padding: 15px 20px;
+      padding: 16px 20px;
       border-radius: 10px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 15px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
     }
-    header h1 { font-size: 1.4rem; letter-spacing: 0.5px; }
-    header span { font-size: 0.85rem; color: #bdc3c7; display: block; }
+    header h1 { font-size: 1.3rem; letter-spacing: 0.5px; font-weight: 700; }
+    header span { font-size: 0.8rem; color: #94a3b8; display: block; margin-top: 2px; }
     .btn-pdf {
       background: var(--accent);
       color: white;
       border: none;
       padding: 10px 16px;
-      font-weight: bold;
+      font-weight: 700;
       border-radius: 6px;
       cursor: pointer;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.15);
     }
     .btn-pdf:active { transform: scale(0.98); }
 
-    /* Navigation / Tabs */
+    /* Navigation Tabs */
     .nav-tabs { display: flex; gap: 8px; margin-bottom: 15px; }
     .tab-btn {
       flex: 1;
       padding: 12px;
-      background: #e0e6ed;
+      background: #e2e8f0;
       border: none;
-      border-radius: 6px;
-      font-weight: bold;
+      border-radius: 8px;
+      font-weight: 700;
       cursor: pointer;
       color: var(--primary);
-      text-align: center;
+      font-size: 0.9rem;
     }
     .tab-btn.active { background: var(--primary); color: white; }
 
-    /* Cards & Containers */
+    /* Cards & Layout */
     .card {
       background: var(--card-bg);
-      padding: 20px;
+      padding: 18px;
       border-radius: 10px;
       border: 1px solid var(--border);
-      margin-bottom: 20px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+      margin-bottom: 15px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
-    .card h2 { font-size: 1.1rem; color: var(--primary); margin-bottom: 15px; border-bottom: 2px solid var(--bg-color); padding-bottom: 8px; }
+    .card h2 { font-size: 1.1rem; color: var(--primary); margin-bottom: 12px; border-bottom: 2px solid var(--bg); padding-bottom: 6px; }
 
-    /* Forms & Inputs */
-    label { display: block; font-weight: bold; font-size: 0.9rem; margin-bottom: 5px; color: #4a5568; }
-    input[type="text"], input[type="number"], select {
+    /* Form Inputs & Kitchen Buttons */
+    label { display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 4px; color: #475569; }
+    input[type="text"], input[type="number"] {
       width: 100%;
-      padding: 12px;
+      padding: 10px;
       border: 1px solid #cbd5e1;
       border-radius: 6px;
       font-size: 1rem;
-      margin-bottom: 12px;
-    }
-    .btn-submit {
-      width: 100%;
-      background: var(--success);
-      color: white;
-      border: none;
-      padding: 14px;
-      font-size: 1rem;
-      font-weight: bold;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-    .btn-submit:active { transform: scale(0.99); }
-
-    /* Stock & Log Output Cards */
-    .stock-item {
-      background: #f8fafc;
-      border: 1px solid var(--border);
-      border-left: 5px solid var(--primary);
-      padding: 12px 15px;
-      border-radius: 6px;
       margin-bottom: 10px;
     }
-    .stock-item h4 { font-size: 1rem; color: var(--primary); margin-bottom: 4px; }
-    .stock-meta { font-size: 0.85rem; color: #64748b; margin-bottom: 6px; }
-    .allergen-tag {
+    .btn-action {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px 16px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      border-radius: 6px;
+      cursor: pointer;
+      width: 100%;
+    }
+
+    /* Checklists */
+    .check-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.95rem;
+    }
+    .check-item input[type="checkbox"] { width: 22px; height: 22px; accent-color: var(--success); cursor: pointer; }
+
+    /* Temperature Inputs Grid */
+    .temp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+
+    /* Timers Grid */
+    .timer-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+    .timer-card {
+      background: #f1f5f9;
+      border: 1px solid var(--border);
+      padding: 12px;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .timer-display { font-size: 1.6rem; font-weight: 800; font-family: monospace; color: var(--primary); margin: 6px 0; }
+    .timer-controls { display: flex; gap: 6px; }
+    .timer-btn { flex: 1; padding: 6px; border: none; border-radius: 4px; font-weight: 700; cursor: pointer; color: white; }
+    .btn-start { background: var(--success); }
+    .btn-reset { background: var(--danger); }
+
+    /* Scanner & Inventory Tags */
+    .stock-item {
+      background: #f8fafc;
+      border-left: 4px solid var(--primary);
+      padding: 10px 12px;
+      border-radius: 4px;
+      margin-bottom: 8px;
+      border-top: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .allergen-badge {
       display: inline-block;
       background: var(--danger);
       color: white;
-      font-size: 0.75rem;
-      font-weight: bold;
-      padding: 2px 7px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 2px 6px;
       border-radius: 4px;
       margin-right: 4px;
       text-transform: uppercase;
     }
-    .allergen-safe {
+    .safe-badge {
       display: inline-block;
       background: var(--success);
       color: white;
-      font-size: 0.75rem;
-      font-weight: bold;
-      padding: 2px 7px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 2px 6px;
       border-radius: 4px;
     }
 
-    /* Print Styles for EHO Audits */
+    /* Print View */
     @media print {
       body { background: white; padding: 0; }
-      header { background: none; color: black; border-bottom: 2px solid black; }
-      .btn-pdf, .nav-tabs, .intake-form-container { display: none !important; }
+      header { background: none; color: black; border-bottom: 2px solid #000; }
+      .btn-pdf, .nav-tabs, .intake-form, .timer-controls { display: none !important; }
       .card { border: 1px solid #ccc; box-shadow: none; page-break-inside: avoid; }
     }
   </style>
 </head>
 <body>
 
-  <!-- Top Header & Branding -->
+  <!-- Header & PDF Export -->
   <header>
     <div>
       <h1>THE CAKE FORGE</h1>
-      <span>Kitchen Operations & EHO Compliance Portal</span>
+      <span>EHO Compliance & SFBB Kitchen Operations</span>
     </div>
-    <button class="btn-pdf" onclick="window.print()">📄 Export Daily Log PDF</button>
+    <button class="btn-pdf" onclick="window.print()">📄 Export Audit PDF</button>
   </header>
 
   <!-- Navigation Tabs -->
   <div class="nav-tabs">
-    <button class="tab-btn active" onclick="switchTab('intake')">📦 Intake & Allergens</button>
-    <button class="tab-btn" onclick="switchTab('logs')">📋 Daily SFBB Logs</button>
+    <button class="tab-btn active" onclick="switchTab('sfbb')">📋 SFBB Checks & Temps</button>
+    <button class="tab-btn" onclick="switchTab('timers')">⏱️ SFBB Timers</button>
+    <button class="tab-btn" onclick="switchTab('pantry')">📦 Pantry & Allergens</button>
   </div>
 
-  <!-- TAB 1: INTAKE & ALLERGEN TRACKER -->
-  <main id="tab-intake">
-    <div class="card intake-form-container">
-      <h2>📦 Stock Intake & Traceability Scanner</h2>
+  <!-- TAB 1: SFBB CHECKLISTS & FRIDGE TEMPS -->
+  <main id="tab-sfbb">
+    <div class="card">
+      <h2>🌡️ Cold Holding Daily Temperature Log</h2>
+      <p style="font-size: 0.8rem; color: #64748b; margin-bottom: 10px;">Target Range: Fridges 1°C to 5°C (Legal max 8°C) | Freezers &lt; -18°C</p>
       
-      <label for="barcodeInput">Barcode (Scan or Type):</label>
-      <input type="text" id="barcodeInput" placeholder="Scan item barcode..." autofocus>
-
-      <label for="lotInput">Supplier Batch / Lot No. (EHO Traceability):</label>
-      <input type="text" id="lotInput" placeholder="e.g. L240731-B">
-
-      <button class="btn-submit" onclick="handleIntakeSubmit()">Add Item & Check 14 UK Allergens</button>
+      <div class="temp-grid">
+        <div>
+          <label for="fridge1">Main Display Fridge (°C):</label>
+          <input type="number" id="fridge1" step="0.1" placeholder="e.g. 3.4">
+        </div>
+        <div>
+          <label for="fridge2">Prep / Store Fridge (°C):</label>
+          <input type="number" id="fridge2" step="0.1" placeholder="e.g. 4.1">
+        </div>
+      </div>
+      <div class="temp-grid">
+        <div>
+          <label for="freezer1">Main Freezer (°C):</label>
+          <input type="number" id="freezer1" step="0.1" placeholder="e.g. -19.5">
+        </div>
+        <div>
+          <label for="loggedBy">Checked By (Initials):</label>
+          <input type="text" id="loggedBy" placeholder="e.g. JS">
+        </div>
+      </div>
+      <button class="btn-action" style="background: var(--success);" onclick="logTemperatures()">Record Temperature Entry</button>
+      
+      <div id="tempLogOutput" style="margin-top: 12px; font-size: 0.85rem; color: #334155;"></div>
     </div>
 
     <div class="card">
-      <h2>🏷️ Logged Pantry & PAO Items</h2>
-      <div id="pantryList">
-        <p style="color: #94a3b8; font-style: italic;">No items scanned in this session yet.</p>
+      <h2>☀️ Opening Checks (SFBB)</h2>
+      <div class="check-item"><input type="checkbox" id="op1"><label for="op1">Fridges & freezers running at correct temperatures</label></div>
+      <div class="check-item"><input type="checkbox" id="op2"><label for="op2">Handwashing station clean, stocked with soap & hot water</label></div>
+      <div class="check-item"><input type="checkbox" id="op3"><label for="op3">Food prep surfaces and utensils disinfected</label></div>
+      <div class="check-item"><input type="checkbox" id="op4"><label for="op4">No signs of pest activity; all ingredients checked</label></div>
+    </div>
+
+    <div class="card">
+      <h2>🌙 Closing Checks (SFBB)</h2>
+      <div class="check-item"><input type="checkbox" id="cl1"><label for="cl1">High-risk foods covered, labelled, and stored correctly</label></div>
+      <div class="check-item"><input type="checkbox" id="cl2"><label for="cl2">All surfaces, equipment, and sinks cleaned and sanitized</label></div>
+      <div class="check-item"><input type="checkbox" id="cl3"><label for="cl3">Waste bins emptied and liners replaced</label></div>
+      <div class="check-item"><input type="checkbox" id="cl4"><label for="cl4">Daily temperature logs and checks signed off</label></div>
+    </div>
+  </main>
+
+  <!-- TAB 2: SFBB TIMERS -->
+  <main id="tab-timers" style="display: none;">
+    <div class="card">
+      <h2>⏱️ Kitchen Process Timers (Cooling / Baking)</h2>
+      <div class="timer-grid">
+        
+        <!-- Timer 1: SFBB Rapid Cooling -->
+        <div class="timer-card">
+          <strong style="font-size: 0.9rem;">SFBB 90-Min Cooling</strong>
+          <div class="timer-display" id="display-1">90:00</div>
+          <div class="timer-controls">
+            <button class="timer-btn btn-start" onclick="toggleTimer(1, 5400)">Start</button>
+            <button class="timer-btn btn-reset" onclick="resetTimer(1, 5400)">Reset</button>
+          </div>
+        </div>
+
+        <!-- Timer 2: Bake Timer -->
+        <div class="timer-card">
+          <strong style="font-size: 0.9rem;">Sponge / Bake Timer</strong>
+          <div class="timer-display" id="display-2">45:00</div>
+          <div class="timer-controls">
+            <button class="timer-btn btn-start" onclick="toggleTimer(2, 2700)">Start</button>
+            <button class="timer-btn btn-reset" onclick="resetTimer(2, 2700)">Reset</button>
+          </div>
+        </div>
+
+        <!-- Timer 3: Sanitizer Contact Time -->
+        <div class="timer-card">
+          <strong style="font-size: 0.9rem;">Sanitizer Contact (5m)</strong>
+          <div class="timer-display" id="display-3">05:00</div>
+          <div class="timer-controls">
+            <button class="timer-btn btn-start" onclick="toggleTimer(3, 300)">Start</button>
+            <button class="timer-btn btn-reset" onclick="resetTimer(3, 300)">Reset</button>
+          </div>
+        </div>
+
       </div>
     </div>
   </main>
 
-  <!-- TAB 2: DAILY CHECKS (Placeholder for full sheet integration) -->
-  <main id="tab-logs" style="display: none;">
+  <!-- TAB 3: BARCODE SCANNER & PANTRY -->
+  <main id="tab-pantry" style="display: none;">
+    <div class="card intake-form">
+      <h2>📦 Stock Intake & 14 UK Allergen Lookup</h2>
+      
+      <label for="barcodeInput">Scan Barcode / EAN Code:</label>
+      <input type="text" id="barcodeInput" placeholder="Scan ingredient barcode..." autofocus>
+
+      <label for="lotInput">Supplier Batch / Lot No. (Traceability):</label>
+      <input type="text" id="lotInput" placeholder="e.g. L240731-B">
+
+      <button class="btn-action" onclick="handleIntakeSubmit()">Process Intake & Extract Allergens</button>
+    </div>
+
     <div class="card">
-      <h2>🌡️ Temperature & Compliance Log</h2>
-      <p style="color: #64748b;">Daily opening/closing checklists and fridge temperature tracking active.</p>
+      <h2>🏷️ Opened Ingredients & PAO Track</h2>
+      <div id="pantryList">
+        <p style="color: #94a3b8; font-style: italic;">No scanned ingredients in this active session.</p>
+      </div>
     </div>
   </main>
 
   <script>
-    // Tab Switching Logic
-    function switchTab(tabName) {
+    // Navigation Tabs Logic
+    function switchTab(tabId) {
       document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-      document.querySelectorAll('main').forEach(el => el.style.display = 'none');
+      document.querySelectorAll('main').forEach(m => m.style.display = 'none');
       
-      if (tabName === 'intake') {
-        document.getElementById('tab-intake').style.display = 'block';
-        event.target.classList.add('active');
+      document.getElementById('tab-' + tabId).style.display = 'block';
+      event.target.classList.add('active');
+    }
+
+    // --- Temperature Logging System ---
+    let tempRecords = [];
+    function logTemperatures() {
+      const f1 = document.getElementById('fridge1').value;
+      const f2 = document.getElementById('fridge2').value;
+      const fz = document.getElementById('freezer1').value;
+      const by = document.getElementById('loggedBy').value.trim();
+
+      if (!f1 || !by) {
+        alert("Please enter at least Fridge 1 temp and your initials.");
+        return;
+      }
+
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const recordStr = `<strong>[${timeStr}]</strong> Main Fridge: ${f1}°C | Prep Fridge: ${f2 || 'N/A'}°C | Freezer: ${fz || 'N/A'}°C — Signed: ${by}`;
+      
+      tempRecords.unshift(recordStr);
+      document.getElementById('tempLogOutput').innerHTML = tempRecords.join('<br>');
+      
+      // Clear Inputs
+      document.getElementById('fridge1').value = '';
+      document.getElementById('fridge2').value = '';
+      document.getElementById('freezer1').value = '';
+    }
+
+    // --- SFBB Kitchen Timers Logic ---
+    const timers = {};
+    function toggleTimer(id, defaultSeconds) {
+      if (!timers[id]) {
+        timers[id] = { remaining: defaultSeconds, interval: null };
+      }
+
+      if (timers[id].interval) {
+        clearInterval(timers[id].interval);
+        timers[id].interval = null;
       } else {
-        document.getElementById('tab-logs').style.display = 'block';
-        event.target.classList.add('active');
+        timers[id].interval = setInterval(() => {
+          if (timers[id].remaining > 0) {
+            timers[id].remaining--;
+            updateTimerDisplay(id);
+          } else {
+            clearInterval(timers[id].interval);
+            alert(`Timer #${id} Complete!`);
+          }
+        }, 1000);
       }
     }
 
-    // UK 14 Major Allergens List
+    function resetTimer(id, defaultSeconds) {
+      if (timers[id] && timers[id].interval) {
+        clearInterval(timers[id].interval);
+      }
+      timers[id] = { remaining: defaultSeconds, interval: null };
+      updateTimerDisplay(id);
+    }
+
+    function updateTimerDisplay(id) {
+      const mins = Math.floor(timers[id].remaining / 60).toString().padStart(2, '0');
+      const secs = (timers[id].remaining % 60).toString().padStart(2, '0');
+      document.getElementById(`display-${id}`).innerText = `${mins}:${secs}`;
+    }
+
+    // --- Barcode & Open Food Facts Allergen Logic ---
     const UK_14_ALLERGENS = [
       "celery", "crustaceans", "eggs", "fish", "lupin", "milk", 
       "molluscs", "mustard", "nuts", "peanuts", "sesame", "soybeans", 
       "sulfites", "gluten"
     ];
+    let pantryItems = [];
 
-    // Local Storage / State Array
-    let pantryInventory = [];
-
-    // Open Food Facts API + Allergen Extraction Logic
-    async function processProductIntake(barcode, lotNumber = "") {
-      try {
-        const response = await fetch(`https://world.openfoodfacts.org/api/v2/product/${barcode}.json`);
-        const data = await response.json();
-
-        if (data.status !== 1) {
-          alert("Product not found in database. You can manually log this item.");
-          return null;
-        }
-
-        const product = data.product;
-        const productName = product.product_name_en || product.product_name || "Unknown Product";
-        
-        // Allergen Extraction Logic
-        const rawAllergens = product.allergens_tags || [];
-        const detectedAllergens = rawAllergens
-          .map(tag => tag.replace(/^en:/, '').toLowerCase())
-          .filter(tag => UK_14_ALLERGENS.some(allergen => tag.includes(allergen)));
-
-        // Stock Data Model
-        const stockItem = {
-          id: "item_" + Date.now(),
-          barcode: barcode,
-          name: productName,
-          lotNumber: lotNumber || "N/A",
-          openedDate: new Date().toLocaleDateString('en-GB'),
-          allergens: [...new Set(detectedAllergens)]
-        };
-
-        return stockItem;
-      } catch (error) {
-        console.error("Fetch Error:", error);
-        alert("Error connecting to database. Please check connection.");
-        return null;
-      }
-    }
-
-    // Form Submission Handler
     async function handleIntakeSubmit() {
       const barcode = document.getElementById('barcodeInput').value.trim();
       const lot = document.getElementById('lotInput').value.trim();
-      
-      if (!barcode) {
-        alert("Please scan or enter a barcode.");
-        return;
-      }
 
-      const item = await processProductIntake(barcode, lot);
-      if (item) {
-        pantryInventory.unshift(item);
+      if (!barcode) return alert("Please scan or input a barcode.");
+
+      try {
+        const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${barcode}.json`);
+        const data = await res.json();
+
+        if (data.status !== 1) {
+          alert("Product not found. You can log lot numbers manually.");
+          return;
+        }
+
+        const product = data.product;
+        const name = product.product_name_en || product.product_name || "Ingredient";
+        const rawAllergens = product.allergens_tags || [];
+        const detected = rawAllergens
+          .map(t => t.replace(/^en:/, '').toLowerCase())
+          .filter(t => UK_14_ALLERGENS.some(a => t.includes(a)));
+
+        const item = {
+          name: name,
+          lot: lot || "N/A",
+          date: new Date().toLocaleDateString('en-GB'),
+          allergens: [...new Set(detected)]
+        };
+
+        pantryItems.unshift(item);
         renderPantry();
-        
-        // Reset Inputs for next scan
+
         document.getElementById('barcodeInput').value = '';
         document.getElementById('lotInput').value = '';
         document.getElementById('barcodeInput').focus();
+      } catch (e) {
+        alert("Network error scanning item.");
       }
     }
 
-    // UI Rendering Logic for Pantry Cards
     function renderPantry() {
       const container = document.getElementById('pantryList');
-      if (pantryInventory.length === 0) {
-        container.innerHTML = '<p style="color: #94a3b8; font-style: italic;">No items scanned in this session yet.</p>';
+      if (pantryItems.length === 0) {
+        container.innerHTML = '<p style="color: #94a3b8; font-style: italic;">No scanned ingredients in this active session.</p>';
         return;
       }
 
-      container.innerHTML = pantryInventory.map(item => {
-        const allergenBadges = item.allergens.length > 0
-          ? item.allergens.map(a => `<span class="allergen-tag">⚠️ ${a}</span>`).join('')
-          : '<span class="allergen-safe">✅ No 14-Major Allergens Flagged</span>';
+      container.innerHTML = pantryItems.map(item => {
+        const badges = item.allergens.length > 0
+          ? item.allergens.map(a => `<span class="allergen-badge">⚠️ ${a}</span>`).join('')
+          : '<span class="safe-badge">✅ No 14-Major Allergens</span>';
 
         return `
           <div class="stock-item">
-            <h4>${item.name}</h4>
-            <div class="stock-meta">
-              <strong>Opened:</strong> ${item.openedDate} | <strong>Lot/Batch:</strong> ${item.lotNumber}
-            </div>
-            <div>${allergenBadges}</div>
+            <strong style="color: var(--primary);">${item.name}</strong>
+            <div style="font-size: 0.8rem; color: #64748b; margin: 4px 0;">Opened: ${item.date} | Batch/Lot: ${item.lot}</div>
+            <div>${badges}</div>
           </div>
         `;
       }).join('');
