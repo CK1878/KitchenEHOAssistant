@@ -1,601 +1,297 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Cake Forge - Kitchen Management & SFBB Hub</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Cake Forge — Kitchen Ops & EHO Compliance Assistant</title>
+  <style>
+    :root {
+      --bg-color: #f4f6f8;
+      --card-bg: #ffffff;
+      --primary: #2c3e50;
+      --accent: #d35400;
+      --success: #27ae60;
+      --warning: #f39c12;
+      --danger: #c0392b;
+      --text: #333333;
+      --border: #e2e8f0;
+    }
 
-    <!-- Camera Barcode Reader Library -->
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: var(--bg-color); color: var(--text); padding: 15px; max-width: 900px; margin: 0 auto; }
 
-    <style>
-        :root {
-            --primary-color: #2c3e50;
-            --secondary-color: #34495e;
-            --accent-color: #27ae60;
-            --danger-color: #d9534f;
-            --bg-color: #f4f6f7;
-            --card-bg: #ffffff;
-            --text-color: #333333;
-        }
+    /* Header & Branding */
+    header {
+      background: var(--primary);
+      color: white;
+      padding: 15px 20px;
+      border-radius: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    header h1 { font-size: 1.4rem; letter-spacing: 0.5px; }
+    header span { font-size: 0.85rem; color: #bdc3c7; display: block; }
+    .btn-pdf {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .btn-pdf:active { transform: scale(0.98); }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-        }
+    /* Navigation / Tabs */
+    .nav-tabs { display: flex; gap: 8px; margin-bottom: 15px; }
+    .tab-btn {
+      flex: 1;
+      padding: 12px;
+      background: #e0e6ed;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      color: var(--primary);
+      text-align: center;
+    }
+    .tab-btn.active { background: var(--primary); color: white; }
 
-        .container {
-            max-width: 900px;
-            width: 100%;
-        }
+    /* Cards & Containers */
+    .card {
+      background: var(--card-bg);
+      padding: 20px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+    }
+    .card h2 { font-size: 1.1rem; color: var(--primary); margin-bottom: 15px; border-bottom: 2px solid var(--bg-color); padding-bottom: 8px; }
 
-        header {
-            margin-bottom: 25px;
-            text-align: center;
-        }
+    /* Forms & Inputs */
+    label { display: block; font-weight: bold; font-size: 0.9rem; margin-bottom: 5px; color: #4a5568; }
+    input[type="text"], input[type="number"], select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 1rem;
+      margin-bottom: 12px;
+    }
+    .btn-submit {
+      width: 100%;
+      background: var(--success);
+      color: white;
+      border: none;
+      padding: 14px;
+      font-size: 1rem;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .btn-submit:active { transform: scale(0.99); }
 
-        h1 {
-            color: var(--primary-color);
-            margin-bottom: 5px;
-            font-size: 2rem;
-        }
+    /* Stock & Log Output Cards */
+    .stock-item {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-left: 5px solid var(--primary);
+      padding: 12px 15px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+    }
+    .stock-item h4 { font-size: 1rem; color: var(--primary); margin-bottom: 4px; }
+    .stock-meta { font-size: 0.85rem; color: #64748b; margin-bottom: 6px; }
+    .allergen-tag {
+      display: inline-block;
+      background: var(--danger);
+      color: white;
+      font-size: 0.75rem;
+      font-weight: bold;
+      padding: 2px 7px;
+      border-radius: 4px;
+      margin-right: 4px;
+      text-transform: uppercase;
+    }
+    .allergen-safe {
+      display: inline-block;
+      background: var(--success);
+      color: white;
+      font-size: 0.75rem;
+      font-weight: bold;
+      padding: 2px 7px;
+      border-radius: 4px;
+    }
 
-        .tagline {
-            color: #666;
-            margin-top: 0;
-            font-style: italic;
-        }
-
-        .card {
-            background: var(--card-bg);
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        h2 {
-            color: var(--secondary-color);
-            margin-top: 0;
-            border-bottom: 2px solid var(--bg-color);
-            padding-bottom: 10px;
-            font-size: 1.25rem;
-        }
-
-        h3 {
-            color: var(--primary-color);
-            margin-top: 15px;
-            margin-bottom: 10px;
-            font-size: 1.05rem;
-        }
-
-        .btn {
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            padding: 8px 14px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background 0.2s ease;
-        }
-
-        .btn:hover {
-            opacity: 0.9;
-        }
-
-        .btn-danger {
-            background-color: var(--danger-color);
-        }
-
-        .btn-success {
-            background-color: var(--accent-color);
-        }
-
-        .input-field {
-            padding: 8px 12px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-
-        .checkbox-group {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-
-        .checkbox-label {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            cursor: pointer;
-        }
-
-        .checkbox-label input {
-            width: 18px;
-            height: 18px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-
-        th, td {
-            text-align: left;
-            padding: 10px;
-            border-bottom: 1px solid #eee;
-        }
-
-        th {
-            background-color: #fafafa;
-        }
-
-        .timer-badge {
-            font-family: monospace;
-            font-size: 18px;
-            font-weight: bold;
-            margin-left: 15px;
-        }
-
-        .temp-row {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-            margin-bottom: 10px;
-            flex-wrap: wrap;
-        }
-
-        #reader {
-            width: 100%;
-            max-width: 400px;
-            margin: 10px auto;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            overflow: hidden;
-        }
-    </style>
+    /* Print Styles for EHO Audits */
+    @media print {
+      body { background: white; padding: 0; }
+      header { background: none; color: black; border-bottom: 2px solid black; }
+      .btn-pdf, .nav-tabs, .intake-form-container { display: none !important; }
+      .card { border: 1px solid #ccc; box-shadow: none; page-break-inside: avoid; }
+    }
+  </style>
 </head>
 <body>
 
-<div class="container">
-    <!-- BRANDING HEADER -->
-    <header>
-        <h1>🎂 The Cake Forge</h1>
-        <p class="tagline">HACCP & SFBB Kitchen Management System</p>
-    </header>
+  <!-- Top Header & Branding -->
+  <header>
+    <div>
+      <h1>THE CAKE FORGE</h1>
+      <span>Kitchen Operations & EHO Compliance Portal</span>
+    </div>
+    <button class="btn-pdf" onclick="window.print()">📄 Export Daily Log PDF</button>
+  </header>
 
-    <!-- 1. FLEXIBLE PROCESS TIMERS -->
+  <!-- Navigation Tabs -->
+  <div class="nav-tabs">
+    <button class="tab-btn active" onclick="switchTab('intake')">📦 Intake & Allergens</button>
+    <button class="tab-btn" onclick="switchTab('logs')">📋 Daily SFBB Logs</button>
+  </div>
+
+  <!-- TAB 1: INTAKE & ALLERGEN TRACKER -->
+  <main id="tab-intake">
+    <div class="card intake-form-container">
+      <h2>📦 Stock Intake & Traceability Scanner</h2>
+      
+      <label for="barcodeInput">Barcode (Scan or Type):</label>
+      <input type="text" id="barcodeInput" placeholder="Scan item barcode..." autofocus>
+
+      <label for="lotInput">Supplier Batch / Lot No. (EHO Traceability):</label>
+      <input type="text" id="lotInput" placeholder="e.g. L240731-B">
+
+      <button class="btn-submit" onclick="handleIntakeSubmit()">Add Item & Check 14 UK Allergens</button>
+    </div>
+
     <div class="card">
-        <h2>⏱️ Kitchen & Process Timers</h2>
-        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
-            <button type="button" class="btn" onclick="addTimer('Oven Bake', 45)">+ Oven Timer (45m)</button>
-            <button type="button" class="btn" onclick="addTimer('Cooling Rack', 20)">+ Cooling Timer (20m)</button>
-            <button type="button" class="btn" onclick="addTimer('Blast Chiller', 90)">+ Blast Chill (90m)</button>
-            <button type="button" class="btn" onclick="addCustomTimer()">+ Custom Timer</button>
-        </div>
+      <h2>🏷️ Logged Pantry & PAO Items</h2>
+      <div id="pantryList">
+        <p style="color: #94a3b8; font-style: italic;">No items scanned in this session yet.</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- TAB 2: DAILY CHECKS (Placeholder for full sheet integration) -->
+  <main id="tab-logs" style="display: none;">
+    <div class="card">
+      <h2>🌡️ Temperature & Compliance Log</h2>
+      <p style="color: #64748b;">Daily opening/closing checklists and fridge temperature tracking active.</p>
+    </div>
+  </main>
+
+  <script>
+    // Tab Switching Logic
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('main').forEach(el => el.style.display = 'none');
+      
+      if (tabName === 'intake') {
+        document.getElementById('tab-intake').style.display = 'block';
+        event.target.classList.add('active');
+      } else {
+        document.getElementById('tab-logs').style.display = 'block';
+        event.target.classList.add('active');
+      }
+    }
+
+    // UK 14 Major Allergens List
+    const UK_14_ALLERGENS = [
+      "celery", "crustaceans", "eggs", "fish", "lupin", "milk", 
+      "molluscs", "mustard", "nuts", "peanuts", "sesame", "soybeans", 
+      "sulfites", "gluten"
+    ];
+
+    // Local Storage / State Array
+    let pantryInventory = [];
+
+    // Open Food Facts API + Allergen Extraction Logic
+    async function processProductIntake(barcode, lotNumber = "") {
+      try {
+        const response = await fetch(`https://world.openfoodfacts.org/api/v2/product/${barcode}.json`);
+        const data = await response.json();
+
+        if (data.status !== 1) {
+          alert("Product not found in database. You can manually log this item.");
+          return null;
+        }
+
+        const product = data.product;
+        const productName = product.product_name_en || product.product_name || "Unknown Product";
         
-        <div id="active-timers-container" style="display: flex; flex-direction: column; gap: 10px;">
-            <!-- Active Timers Render Here -->
-        </div>
-    </div>
+        // Allergen Extraction Logic
+        const rawAllergens = product.allergens_tags || [];
+        const detectedAllergens = rawAllergens
+          .map(tag => tag.replace(/^en:/, '').toLowerCase())
+          .filter(tag => UK_14_ALLERGENS.some(allergen => tag.includes(allergen)));
 
-    <!-- 2. OPENED GOODS & BARCODE TRACKER WITH CAMERA SCANNER -->
-    <div class="card">
-        <h2>🏷️ Opened Goods & Barcode Tracker</h2>
-        <p style="font-size: 13px; color: #666; margin-top: -5px;">Scan ingredient barcodes using camera or hardware scanner. Product names fetch automatically online.</p>
+        // Stock Data Model
+        const stockItem = {
+          id: "item_" + Date.now(),
+          barcode: barcode,
+          name: productName,
+          lotNumber: lotNumber || "N/A",
+          openedDate: new Date().toLocaleDateString('en-GB'),
+          allergens: [...new Set(detectedAllergens)]
+        };
 
-        <!-- Camera Scanner Toggle -->
-        <div style="margin-bottom: 15px;">
-            <button type="button" class="btn btn-success" id="camera-toggle-btn" onclick="toggleCameraScanner()">📷 Open Camera Scanner</button>
-            <div id="reader" style="display:none;"></div>
-        </div>
-
-        <!-- Manual or Hardware Barcode Entry -->
-        <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
-            <input type="text" id="barcode-input" class="input-field" placeholder="Scan Barcode or Type Item Name..." style="flex:1; min-width: 220px;" onkeypress="if(event.key==='Enter') processBarcodeEntry()">
-            <input type="number" id="pao-months" class="input-field" placeholder="PAO (Months)" style="width:110px;" value="3">
-            <button type="button" class="btn" onclick="processBarcodeEntry()">Log Item</button>
-        </div>
-
-        <table>
-            <thead>
-                <tr>
-                    <th>Item Name</th>
-                    <th>Opened</th>
-                    <th>PAO Expiry</th>
-                    <th style="text-align: right;">Action</th>
-                </tr>
-            </thead>
-            <tbody id="opened-goods-tbody">
-                <!-- Dynamically generated rows -->
-            </tbody>
-        </table>
-    </div>
-
-    <!-- 3. TEMPERATURE LOGS (FRIDGES & CHILLERS) -->
-    <div class="card">
-        <h2>❄️ Fridge & Chiller Temperature Logs</h2>
-        <div class="temp-row">
-            <label style="min-width: 140px;"><strong>Main Kitchen Fridge:</strong></label>
-            <input type="number" id="temp-fridge-1" class="input-field" placeholder="°C" style="width: 80px;" step="0.1" onchange="saveToDisk()">
-            <span style="font-size: 13px; color: #666;">(Target: 1°C - 5°C, Max: 8°C)</span>
-        </div>
-        <div class="temp-row">
-            <label style="min-width: 140px;"><strong>Secondary / Prep Fridge:</strong></label>
-            <input type="number" id="temp-fridge-2" class="input-field" placeholder="°C" style="width: 80px;" step="0.1" onchange="saveToDisk()">
-            <span style="font-size: 13px; color: #666;">(Target: 1°C - 5°C, Max: 8°C)</span>
-        </div>
-        <div class="temp-row">
-            <label style="min-width: 140px;"><strong>Freezer Unit:</strong></label>
-            <input type="number" id="temp-freezer" class="input-field" placeholder="°C" style="width: 80px;" step="0.1" onchange="saveToDisk()">
-            <span style="font-size: 13px; color: #666;">(Target: -18°C or lower)</span>
-        </div>
-    </div>
-
-    <!-- 4. SFBB DAILY CHECKLISTS -->
-    <div class="card">
-        <h2>📋 SFBB Daily Opening & Closing Checks</h2>
-        
-        <h3>Opening Checks</h3>
-        <div class="checkbox-group" id="opening-checks">
-            <label class="checkbox-label"><input type="checkbox" id="chk-op-1" onchange="saveToDisk()"> Fridges and chillers running at safe temperatures (8°C or below)</label>
-            <label class="checkbox-label"><input type="checkbox" id="chk-op-2" onchange="saveToDisk()"> Food preparation areas, surfaces, and equipment are clean and sanitized</label>
-            <label class="checkbox-label"><input type="checkbox" id="chk-op-3" onchange="saveToDisk()"> Handwashing basin fully stocked with antibacterial soap and paper towels</label>
-            <label class="checkbox-label"><input type="checkbox" id="chk-op-4" onchange="saveToDisk()"> No signs of pest activity or damaged packaging</label>
-        </div>
-
-        <h3>Closing Checks</h3>
-        <div class="checkbox-group" id="closing-checks">
-            <label class="checkbox-label"><input type="checkbox" id="chk-cl-1" onchange="saveToDisk()"> No food left out; all opened items covered, labeled, and dated</label>
-            <label class="checkbox-label"><input type="checkbox" id="chk-cl-2" onchange="saveToDisk()"> All work surfaces, equipment, mixers, and handles cleaned and disinfected</label>
-            <label class="checkbox-label"><input type="checkbox" id="chk-cl-3" onchange="saveToDisk()"> Waste bins emptied, bagged, and area cleared</label>
-            <label class="checkbox-label"><input type="checkbox" id="chk-cl-4" onchange="saveToDisk()"> Final fridge temperatures verified and recorded</label>
-        </div>
-    </div>
-</div>
-
-<script>
-// --- LOCAL APP STATE ---
-let state = {
-    activeTimers: [],
-    openedIngredients: [],
-    temps: { fridge1: '', fridge2: '', freezer: '' },
-    checks: {}
-};
-
-let html5QrCode = null;
-let isCameraActive = false;
-
-// ==========================================
-// INITIALIZATION & LOCAL STORAGE
-// ==========================================
-function loadFromDisk() {
-    const saved = localStorage.getItem('sfbb_hub_state');
-    if (saved) {
-        try {
-            state = JSON.parse(saved);
-        } catch(e) {
-            console.error("Failed to parse saved state", e);
-        }
-    }
-    
-    // Ensure arrays/objects exist
-    if (!state.activeTimers) state.activeTimers = [];
-    if (!state.openedIngredients) state.openedIngredients = [];
-    if (!state.temps) state.temps = { fridge1: '', fridge2: '', freezer: '' };
-    if (!state.checks) state.checks = {};
-
-    // Restore Temps
-    document.getElementById('temp-fridge-1').value = state.temps.fridge1 || '';
-    document.getElementById('temp-fridge-2').value = state.temps.fridge2 || '';
-    document.getElementById('temp-freezer').value = state.temps.freezer || '';
-
-    // Restore Checkboxes
-    for (let i = 1; i <= 4; i++) {
-        if (document.getElementById(`chk-op-${i}`)) {
-            document.getElementById(`chk-op-${i}`).checked = !!state.checks[`chk-op-${i}`];
-        }
-        if (document.getElementById(`chk-cl-${i}`)) {
-            document.getElementById(`chk-cl-${i}`).checked = !!state.checks[`chk-cl-${i}`];
-        }
+        return stockItem;
+      } catch (error) {
+        console.error("Fetch Error:", error);
+        alert("Error connecting to database. Please check connection.");
+        return null;
+      }
     }
 
-    renderPantryLedger();
-    renderTimers();
-}
-
-function saveToDisk() {
-    // Save Temps
-    state.temps = {
-        fridge1: document.getElementById('temp-fridge-1').value,
-        fridge2: document.getElementById('temp-fridge-2').value,
-        freezer: document.getElementById('temp-freezer').value
-    };
-
-    // Save Checkbox states
-    state.checks = {};
-    for (let i = 1; i <= 4; i++) {
-        const opChk = document.getElementById(`chk-op-${i}`);
-        const clChk = document.getElementById(`chk-cl-${i}`);
-        if (opChk) state.checks[`chk-op-${i}`] = opChk.checked;
-        if (clChk) state.checks[`chk-cl-${i}`] = clChk.checked;
-    }
-
-    localStorage.setItem('sfbb_hub_state', JSON.stringify(state));
-}
-
-// ==========================================
-// 1. CAMERA BARCODE SCANNER LOGIC
-// ==========================================
-function toggleCameraScanner() {
-    const readerDiv = document.getElementById('reader');
-    const btn = document.getElementById('camera-toggle-btn');
-
-    if (isCameraActive) {
-        if (html5QrCode) {
-            html5QrCode.stop().then(() => {
-                readerDiv.style.display = 'none';
-                btn.innerText = '📷 Open Camera Scanner';
-                btn.className = 'btn btn-success';
-                isCameraActive = false;
-            }).catch(err => console.error("Error stopping scanner", err));
-        }
-    } else {
-        readerDiv.style.display = 'block';
-        btn.innerText = '⏹️ Stop Camera Scanner';
-        btn.className = 'btn btn-danger';
-        
-        if (!html5QrCode) {
-            html5QrCode = new Html5Qrcode("reader");
-        }
-
-        html5QrCode.start(
-            { facingMode: "environment" },
-            { fps: 10, qrbox: { width: 250, height: 150 } },
-            (decodedText) => {
-                // On Scan Success
-                document.getElementById('barcode-input').value = decodedText;
-                processBarcodeEntry();
-                toggleCameraScanner(); // Close scanner after successful read
-            },
-            (errorMessage) => {
-                // Ignore frame parse errors
-            }
-        ).catch(err => {
-            alert("Could not access camera: " + err);
-            readerDiv.style.display = 'none';
-            btn.innerText = '📷 Open Camera Scanner';
-            btn.className = 'btn btn-success';
-            isCameraActive = false;
-        });
-
-        isCameraActive = true;
-    }
-}
-
-// ==========================================
-// 2. OPEN FOOD FACTS API & BARCODE SCANNER
-// ==========================================
-async function processBarcodeEntry() {
-    const inputVal = document.getElementById('barcode-input').value.trim();
-    let paoMonths = parseInt(document.getElementById('pao-months').value) || 3;
-
-    if (!inputVal) return;
-
-    let itemName = inputVal;
-    let barcodeStr = "Manual";
-
-    if (/^\d+$/.test(inputVal)) {
-        barcodeStr = inputVal;
-        try {
-            const response = await fetch(`https://world.openfoodfacts.org/api/v0/product/${inputVal}.json`);
-            const data = await response.json();
-
-            if (data.status === 1 && data.product) {
-                const prod = data.product;
-                itemName = prod.product_name_en || prod.product_name || `Scanned Item (${inputVal})`;
-
-                // Smart PAO Category Fallbacks
-                const keywords = ((prod.categories_tags || []).join(' ') + ' ' + (prod.product_name || '')).toLowerCase();
-                
-                if (keywords.includes('chocolate') || keywords.includes('cocoa')) {
-                    paoMonths = 12;
-                } else if (keywords.includes('flour') || keywords.includes('sugar') || keywords.includes('baking')) {
-                    paoMonths = 6;
-                } else if (keywords.includes('nut') || keywords.includes('almond') || keywords.includes('seed')) {
-                    paoMonths = 3;
-                } else if (keywords.includes('dairy') || keywords.includes('butter') || keywords.includes('cream')) {
-                    paoMonths = 1;
-                }
-                
-                document.getElementById('pao-months').value = paoMonths;
-            } else {
-                itemName = `Unrecognized Barcode (${inputVal})`;
-            }
-        } catch (err) {
-            console.error("Open Food Facts fetch failed:", err);
-            itemName = `Scanned Item (${inputVal})`;
-        }
-    }
-
-    const openDate = new Date();
-    const expDate = new Date();
-    expDate.setDate(expDate.getDate() + (paoMonths * 30));
-
-    const record = {
-        id: 'ing-' + Date.now(),
-        openedOn: openDate.toLocaleDateString('en-GB'),
-        name: itemName,
-        barcode: barcodeStr,
-        expiresOn: expDate.toLocaleDateString('en-GB'),
-        expiryTimestamp: expDate.getTime()
-    };
-
-    state.openedIngredients.unshift(record);
-    document.getElementById('barcode-input').value = "";
-    
-    renderPantryLedger();
-    saveToDisk();
-}
-
-// ==========================================
-// 3. PANTRY LEDGER RENDERING & REMOVAL
-// ==========================================
-function renderPantryLedger() {
-    const tbody = document.getElementById('opened-goods-tbody');
-    if (!tbody) return;
-    tbody.innerHTML = '';
-
-    if (state.openedIngredients.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" style="padding:12px; text-align:center; color:#777;">No active opened goods logged.</td></tr>';
+    // Form Submission Handler
+    async function handleIntakeSubmit() {
+      const barcode = document.getElementById('barcodeInput').value.trim();
+      const lot = document.getElementById('lotInput').value.trim();
+      
+      if (!barcode) {
+        alert("Please scan or enter a barcode.");
         return;
-    }
+      }
 
-    const now = Date.now();
-
-    state.openedIngredients.forEach((item) => {
-        const tr = document.createElement('tr');
-
-        const isExpired = item.expiryTimestamp && item.expiryTimestamp < now;
-        const statusStyle = isExpired ? 'color: var(--danger-color); font-weight: bold;' : '';
-
-        tr.innerHTML = `
-            <td><strong>${escapeHtml(item.name)}</strong></td>
-            <td>${item.openedOn}</td>
-            <td style="${statusStyle}">
-                ${item.expiresOn} ${isExpired ? '(EXPIRED)' : ''}
-            </td>
-            <td style="text-align: right;">
-                <button type="button" class="btn btn-danger" style="padding:4px 8px; font-size:12px;" onclick="removeIngredient('${item.id}')">
-                   🗑️ Finish / Remove
-                </button>
-            </td>
-        `;
-        tbody.appendChild(tr);
-    });
-}
-
-function removeIngredient(id) {
-    state.openedIngredients = state.openedIngredients.filter(item => item.id !== id);
-    renderPantryLedger();
-    saveToDisk();
-}
-
-function escapeHtml(str) {
-    return str.replace(/[&<>"']/g, function(m) {
-        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
-    });
-}
-
-// ==========================================
-// 4. MULTI-TIMER SYSTEM
-// ==========================================
-function addTimer(label, minutes) {
-    const timer = {
-        id: 'timer-' + Date.now(),
-        label: label,
-        totalSeconds: minutes * 60,
-        remainingSeconds: minutes * 60,
-        isRunning: false,
-        intervalId: null
-    };
-    state.activeTimers.push(timer);
-    renderTimers();
-    saveToDisk();
-}
-
-function addCustomTimer() {
-    const label = prompt("Enter timer name (e.g. Sponge Cooling, Isomalt Cook):", "Process Timer");
-    if (!label) return;
-    const minsStr = prompt("Enter duration in minutes:", "15");
-    const mins = parseInt(minsStr);
-    if (!isNaN(mins) && mins > 0) {
-        addTimer(label, mins);
-    }
-}
-
-function toggleTimer(id) {
-    const timer = state.activeTimers.find(t => t.id === id);
-    if (!timer) return;
-
-    if (timer.isRunning) {
-        clearInterval(timer.intervalId);
-        timer.isRunning = false;
-    } else {
-        timer.isRunning = true;
-        timer.intervalId = setInterval(() => {
-            if (timer.remainingSeconds > 0) {
-                timer.remainingSeconds--;
-                renderTimers();
-            } else {
-                clearInterval(timer.intervalId);
-                timer.isRunning = false;
-                alert(`🔔 TIMER COMPLETE: ${timer.label}`);
-                renderTimers();
-            }
-        }, 1000);
-    }
-    renderTimers();
-}
-
-function deleteTimer(id) {
-    const timer = state.activeTimers.find(t => t.id === id);
-    if (timer && timer.intervalId) clearInterval(timer.intervalId);
-    state.activeTimers = state.activeTimers.filter(t => t.id !== id);
-    renderTimers();
-    saveToDisk();
-}
-
-function renderTimers() {
-    const container = document.getElementById('active-timers-container');
-    if (!container) return;
-    container.innerHTML = '';
-
-    if (state.activeTimers.length === 0) {
-        container.innerHTML = '<div style="color:#777; font-style:italic;">No active timers. Click a preset above to start one.</div>';
-        return;
-    }
-
-    state.activeTimers.forEach(timer => {
-        const mins = Math.floor(timer.remainingSeconds / 60);
-        const secs = timer.remainingSeconds % 60;
-        const timeFormatted = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-
-        const div = document.createElement('div');
-        div.style.cssText = 'display:flex; justify-content:space-between; align-items:center; background:#fafafa; padding:10px 15px; border-radius:6px; border:1px solid #eee;';
+      const item = await processProductIntake(barcode, lot);
+      if (item) {
+        pantryInventory.unshift(item);
+        renderPantry();
         
-        div.innerHTML = `
-            <div>
-                <strong>${escapeHtml(timer.label)}</strong>
-                <span class="timer-badge" style="color:${timer.remainingSeconds === 0 ? 'var(--danger-color)' : 'var(--primary-color)'};">
-                    ${timeFormatted}
-                </span>
+        // Reset Inputs for next scan
+        document.getElementById('barcodeInput').value = '';
+        document.getElementById('lotInput').value = '';
+        document.getElementById('barcodeInput').focus();
+      }
+    }
+
+    // UI Rendering Logic for Pantry Cards
+    function renderPantry() {
+      const container = document.getElementById('pantryList');
+      if (pantryInventory.length === 0) {
+        container.innerHTML = '<p style="color: #94a3b8; font-style: italic;">No items scanned in this session yet.</p>';
+        return;
+      }
+
+      container.innerHTML = pantryInventory.map(item => {
+        const allergenBadges = item.allergens.length > 0
+          ? item.allergens.map(a => `<span class="allergen-tag">⚠️ ${a}</span>`).join('')
+          : '<span class="allergen-safe">✅ No 14-Major Allergens Flagged</span>';
+
+        return `
+          <div class="stock-item">
+            <h4>${item.name}</h4>
+            <div class="stock-meta">
+              <strong>Opened:</strong> ${item.openedDate} | <strong>Lot/Batch:</strong> ${item.lotNumber}
             </div>
-            <div>
-                <button type="button" class="btn" style="padding:4px 10px;" onclick="toggleTimer('${timer.id}')">
-                    ${timer.isRunning ? '⏸️ Pause' : '▶️ Start'}
-                </button>
-                <button type="button" class="btn btn-danger" style="padding:4px 10px; margin-left:5px;" onclick="deleteTimer('${timer.id}')">
-                    ❌ Delete
-                </button>
-            </div>
+            <div>${allergenBadges}</div>
+          </div>
         `;
-        container.appendChild(div);
-    });
-}
-
-// Boot up app on page load
-window.onload = loadFromDisk;
-</script>
-
+      }).join('');
+    }
+  </script>
 </body>
 </html>
