@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>The Cake Forge — Kitchen Console</title>
+  <!-- HTML5 QR / Barcode Scanner Library -->
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <style>
     :root {
       --bg-dark: #11161d;
@@ -15,18 +17,17 @@
       --text-muted: #94a3b8;
       --danger: #ef4444;
       --success: #22c55e;
-      --warning: #f59e0b;
       --border: #334155;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
     body { background-color: var(--bg-dark); color: var(--text-main); padding: 14px; max-width: 900px; margin: 0 auto; padding-bottom: 50px; }
 
-    /* Top Navigation Tabs */
+    /* Navigation Header */
     .nav-header { display: flex; gap: 8px; margin-bottom: 12px; }
     .nav-tab {
       flex: 1;
-      padding: 10px;
+      padding: 12px;
       background: var(--card-bg);
       border: 1px solid var(--border);
       color: var(--text-muted);
@@ -34,7 +35,7 @@
       border-radius: 8px;
       cursor: pointer;
       text-align: center;
-      font-size: 0.9rem;
+      font-size: 0.95rem;
     }
     .nav-tab.active { background: var(--accent-blue); color: white; border-color: var(--primary-blue); }
 
@@ -84,64 +85,10 @@
     }
     .btn-state.active { background: var(--primary-blue); color: #000; font-weight: 800; border-color: var(--primary-blue); }
 
-    /* Cold Holding Touch Controls */
-    .temp-item {
-      background: var(--card-inner);
-      border-radius: 10px;
-      padding: 12px 16px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-    .temp-info h3 { font-size: 0.95rem; font-weight: 700; color: var(--text-main); }
-    .temp-info span { font-size: 0.75rem; color: var(--text-muted); }
-    
-    .stepper-control { display: flex; align-items: center; gap: 12px; }
-    .btn-step {
-      width: 38px;
-      height: 38px;
-      background: #334155;
-      color: white;
-      border: none;
-      border-radius: 50%;
-      font-size: 1.2rem;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    .btn-step:active { background: var(--primary-blue); color: black; }
-    .temp-val { font-size: 1.3rem; font-weight: 800; font-family: monospace; min-width: 65px; text-align: center; }
-
-    /* Interval Timers Grid */
-    .timer-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; }
-    .timer-card {
-      background: var(--card-inner);
-      border-radius: 10px;
-      padding: 12px;
-      border-left: 4px solid var(--primary-blue);
-    }
-    .timer-card.overdue { border-left-color: var(--danger); background: #2d1a1e; }
-    .timer-card-title { font-size: 0.85rem; font-weight: 700; color: var(--text-main); margin-bottom: 4px; }
-    .timer-display { font-size: 1.6rem; font-weight: 800; font-family: monospace; color: var(--text-main); margin: 4px 0 8px 0; }
-    .timer-card.overdue .timer-display { color: var(--danger); }
-    
-    .timer-actions { display: flex; gap: 6px; }
-    .btn-timer {
-      background: #334155;
-      color: white;
-      border: none;
-      padding: 6px 10px;
-      border-radius: 6px;
-      font-size: 0.75rem;
-      font-weight: 700;
-      cursor: pointer;
-      flex: 1;
-    }
-    .btn-timer.primary { background: var(--primary-blue); color: #000; }
-
-    /* Barcode Intake & Pantry */
+    /* Cold Holding Input Form */
+    .temp-input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
     label { display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 4px; }
-    input[type="text"] {
+    input[type="number"], input[type="text"] {
       width: 100%;
       padding: 12px;
       background: var(--card-inner);
@@ -149,18 +96,53 @@
       border-radius: 8px;
       color: white;
       font-size: 1rem;
-      margin-bottom: 10px;
     }
+
     .btn-action {
       width: 100%;
-      padding: 12px;
-      background: var(--accent-blue);
+      padding: 14px;
+      background: var(--success);
       color: white;
       border: none;
       border-radius: 8px;
       font-weight: 800;
-      font-size: 0.95rem;
+      font-size: 1rem;
       cursor: pointer;
+    }
+
+    /* Interval Timers Grid */
+    .timer-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+    .timer-card {
+      background: var(--card-inner);
+      border-radius: 10px;
+      padding: 14px;
+      border-left: 4px solid var(--primary-blue);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .timer-card.overdue { border-left-color: var(--danger); background: #2d1a1e; animation: pulse 1.5s infinite; }
+    
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+      70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+
+    .timer-card-title { font-size: 0.85rem; font-weight: 700; color: var(--text-main); }
+    .timer-display { font-size: 1.8rem; font-weight: 800; font-family: monospace; color: var(--text-main); margin: 6px 0 10px 0; }
+    .timer-card.overdue .timer-display { color: var(--danger); }
+    
+    .btn-timer-reset {
+      background: var(--primary-blue);
+      color: #000;
+      border: none;
+      padding: 10px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 800;
+      cursor: pointer;
+      width: 100%;
     }
 
     /* Checklists */
@@ -176,11 +158,14 @@
 
     /* Logs */
     .log-container { font-family: monospace; font-size: 0.8rem; color: var(--text-muted); max-height: 150px; overflow-y: auto; }
+
+    /* Camera Viewfinder Styling */
+    #interactive-scanner { width: 100%; max-width: 500px; margin: 10px auto; border-radius: 8px; overflow: hidden; border: 2px solid var(--primary-blue); }
   </style>
 </head>
 <body>
 
-  <!-- Tab Switcher -->
+  <!-- Navigation Switcher -->
   <div class="nav-header">
     <button class="nav-tab active" onclick="switchTab(event, 'dashboard')">🎛️ Live Kitchen Dashboard</button>
     <button class="nav-tab" onclick="switchTab(event, 'intake')">📦 Stock Intake & Barcode</button>
@@ -193,14 +178,14 @@
       <span>Integrated HACCP Kitchen Console</span>
     </div>
     <div class="clock-display">
-      <div class="clock-time" id="liveClock">18:26:49</div>
-      <div class="clock-date" id="liveDate">Friday, 31 July 2026</div>
+      <div class="clock-time" id="liveClock">--:--:--</div>
+      <div class="clock-date" id="liveDate">---</div>
     </div>
   </div>
 
   <!-- TAB 1: LIVE DASHBOARD -->
   <main id="tab-dashboard">
-    <!-- Operational State Toggle -->
+    <!-- SFBB Operational Mode Toggles -->
     <section class="card">
       <div class="card-title">SFBB Operational State:</div>
       <div class="state-buttons">
@@ -210,59 +195,56 @@
       </div>
     </section>
 
-    <!-- Cold Holding Audit Log -->
+    <!-- Cold Holding Temperature Entry (Triggers Audit & Resets Timer) -->
     <section class="card">
-      <div class="card-title">Cold Holding Audit Log</div>
-      
-      <div class="temp-item">
-        <div class="temp-info">
-          <h3>Dedicated Business Fridge</h3>
-          <span>Target: 0.0°C to 5.0°C</span>
+      <div class="card-title">Cold Holding Log & Automated Timer Reset</div>
+      <div class="temp-input-grid">
+        <div>
+          <label for="fridge1">Main Business Fridge (°C):</label>
+          <input type="number" id="fridge1" step="0.1" placeholder="Target: 0°C - 5°C">
         </div>
-        <div class="stepper-control">
-          <button class="btn-step" onclick="adjustTemp('f1', -0.5)">-</button>
-          <div class="temp-val" id="f1-val">4.0°C</div>
-          <button class="btn-step" onclick="adjustTemp('f1', 0.5)">+</button>
+        <div>
+          <label for="freezer1">Main Business Freezer (°C):</label>
+          <input type="number" id="freezer1" step="0.1" placeholder="Target: Below -18°C">
         </div>
       </div>
-
-      <div class="temp-item">
-        <div class="temp-info">
-          <h3>Dedicated Business Freezer</h3>
-          <span>Target: Below -18.0°C</span>
-        </div>
-        <div class="stepper-control">
-          <button class="btn-step" onclick="adjustTemp('fz', -0.5)">-</button>
-          <div class="temp-val" id="fz-val">-18.0°C</div>
-          <button class="btn-step" onclick="adjustTemp('fz', 0.5)">+</button>
-        </div>
-      </div>
-
-      <button class="btn-action" style="margin-top: 5px; background: var(--success);" onclick="commitTemps()">Save & Record Temperature Entry</button>
+      <button class="btn-action" onclick="commitTempsAndResetTimer()">Save Temp Entry & Reset Fridge Timer</button>
     </section>
 
-    <!-- Interval Timers -->
+    <!-- Interval Timers Grid -->
     <section class="card">
       <div class="card-title">Interval Timers & Automated Resets</div>
       <div class="timer-grid" id="timerGrid">
-        <!-- Dynamic Timers render here -->
+        <!-- Dynamic Timers Rendered Here -->
       </div>
     </section>
 
-    <!-- SFBB Checklists -->
+    <!-- Full SFBB Opening Checklist -->
     <section class="card">
-      <div class="card-title">SFBB Daily Checks</div>
-      <div class="check-row"><input type="checkbox" id="c1"><label for="c1">Fridges & freezers running at correct temps</label></div>
-      <div class="check-row"><input type="checkbox" id="c2"><label for="c2">Handwash station fully stocked (soap/blue roll)</label></div>
-      <div class="check-row"><input type="checkbox" id="c3"><label for="c3">Sanitiser surface prep complete</label></div>
-      <div class="check-row"><input type="checkbox" id="c4"><label for="c4">Closing audit logged and high-risk items covered</label></div>
+      <div class="card-title">☀️ SFBB Opening Checklist Routine</div>
+      <div class="check-row"><input type="checkbox" id="op1"><label for="op1">Fridges & freezers running at target temperatures (Fridge ≤5°C / Freezer ≤-18°C)</label></div>
+      <div class="check-row"><input type="checkbox" id="op2"><label for="op2">Handwash basin clean, hot water available, soap & blue roll fully stocked</label></div>
+      <div class="check-row"><input type="checkbox" id="op3"><label for="op3">All food contact surfaces, equipment & handles sanitized with food-safe disinfectant</label></div>
+      <div class="check-row"><input type="checkbox" id="op4"><label for="op4">No signs of pest activity; dry stores intact, sealed, and off the floor</label></div>
+      <div class="check-row"><input type="checkbox" id="op5"><label for="op5">Cross-contamination controls in place (separate prep areas & utensils set)</label></div>
+      <div class="check-row"><input type="checkbox" id="op6"><label for="op6">Clean chef whites/aprons worn; long hair tied back & jewelry removed</label></div>
+    </section>
+
+    <!-- Full SFBB Closing Checklist Routine -->
+    <section class="card">
+      <div class="card-title">🌙 SFBB Closing Checklist Routine</div>
+      <div class="check-row"><input type="checkbox" id="cl1"><label for="cl1">High-risk foods covered, date-labelled, and properly chilled/stored</label></div>
+      <div class="check-row"><input type="checkbox" id="cl2"><label for="cl2">All prep tables, counters, mixers, and touchpoints thoroughly sanitized</label></div>
+      <div class="check-row"><input type="checkbox" id="cl3"><label for="cl3">Waste bins emptied, disinfected, and fresh bin liners fitted</label></div>
+      <div class="check-row"><input type="checkbox" id="cl4"><label for="cl4">Sinks wiped down, dirty cloths placed in laundry bag</label></div>
+      <div class="check-row"><input type="checkbox" id="cl5"><label for="cl5">Daily temperature entry logged and SFBB sign-off complete for EHO</label></div>
     </section>
 
     <!-- Audit Log -->
     <section class="card">
-      <div class="card-title">Interval Reset Timestamp Audit</div>
+      <div class="card-title">Interval Reset & Temperature Audit Trail</div>
       <div class="log-container" id="auditLog">
-        <div>[System Ready] Interval tracking active.</div>
+        <div>[System Ready] Shift logging active.</div>
       </div>
     </section>
   </main>
@@ -278,11 +260,12 @@
         <button class="btn-action" style="width: auto; padding: 0 16px; background: var(--primary-blue); color: black;" onclick="fetchBarcodeData()">Lookup</button>
       </div>
 
-      <!-- Camera Trigger Button -->
-      <label for="cameraFileInput" class="btn-action" style="display: block; text-align: center; background: #2563eb; cursor: pointer; margin-bottom: 10px;">
-        📷 Open Camera Scanner
-      </label>
-      <input type="file" id="cameraFileInput" accept="image/*" capture="environment" style="display: none;" onchange="processBarcodeImage(event)">
+      <!-- Live Camera Barcode Scanner Viewfinder -->
+      <button id="btn-toggle-camera" class="btn-action" style="background: #2563eb; margin-bottom: 10px;" onclick="toggleCameraScanner()">
+        📷 Open Live Camera Barcode Scanner
+      </button>
+      
+      <div id="interactive-scanner" style="display: none;"></div>
 
       <label for="lotInput">Supplier Lot / Batch Number:</label>
       <input type="text" id="lotInput" placeholder="e.g. L240731">
@@ -327,31 +310,12 @@
       logAudit(`Operational Mode changed to: ${btn.textContent}`);
     }
 
-    // Stepper Controls
-    let f1Temp = 4.0;
-    let fzTemp = -18.0;
-
-    function adjustTemp(target, val) {
-      if (target === 'f1') {
-        f1Temp = parseFloat((f1Temp + val).toFixed(1));
-        document.getElementById('f1-val').textContent = `${f1Temp.toFixed(1)}°C`;
-      } else {
-        fzTemp = parseFloat((fzTemp + val).toFixed(1));
-        document.getElementById('fz-val').textContent = `${fzTemp.toFixed(1)}°C`;
-      }
-    }
-
-    function commitTemps() {
-      logAudit(`Cold Holding Logged — Fridge: ${f1Temp.toFixed(1)}°C | Freezer: ${fzTemp.toFixed(1)}°C`);
-      alert("Temperatures saved to shift audit!");
-    }
-
     // Autonomous Timers Engine
     let timers = [
-      { id: 1, name: "Fridge Audit", duration: 43149, remaining: 40749 },
-      { id: 2, name: "Sanitisation", duration: 6378, remaining: 6378 },
-      { id: 3, name: "Oven / Bake", duration: 2700, remaining: 2700 },
-      { id: 4, name: "Bin Pull", duration: 13201, remaining: 13201 }
+      { id: 1, name: "Fridge Audit", duration: 14400, remaining: 14400 }, // 4h
+      { id: 2, name: "Sanitisation", duration: 7200, remaining: 7200 },   // 2h
+      { id: 3, name: "Oven / Bake", duration: 2700, remaining: 2700 },     // 45m
+      { id: 4, name: "Bin Pull", duration: 13200, remaining: 13200 }       // 3h40m
     ];
 
     setInterval(() => {
@@ -372,12 +336,11 @@
 
         return `
           <div class="timer-card ${isOverdue ? 'overdue' : ''}">
-            <div class="timer-card-title">${t.name}</div>
-            <div class="timer-display">${hrs}:${mins}:${secs}</div>
-            <div class="timer-actions">
-              <button class="btn-timer primary" onclick="resetTimer(${t.id})">Reset</button>
-              <button class="btn-timer" onclick="addMins(${t.id}, 5)">+5m</button>
+            <div>
+              <div class="timer-card-title">${t.name}</div>
+              <div class="timer-display">${hrs}:${mins}:${secs}</div>
             </div>
+            <button class="btn-timer-reset" onclick="resetTimer(${t.id})">RESET TIMER</button>
           </div>
         `;
       }).join('');
@@ -392,12 +355,24 @@
       }
     }
 
-    function addMins(id, mins) {
-      const t = timers.find(x => x.id === id);
-      if (t) {
-        t.remaining += mins * 60;
-        renderTimers();
+    // Combined Temperature Logging + Automatic Timer Reset
+    function commitTempsAndResetTimer() {
+      const f1 = document.getElementById('fridge1').value;
+      const fz = document.getElementById('freezer1').value;
+
+      if (!f1) {
+        alert("Please enter Main Fridge temperature.");
+        return;
       }
+
+      logAudit(`Cold Holding Logged — Fridge: ${f1}°C | Freezer: ${fz ? fz + '°C' : 'N/A'}`);
+      
+      // Reset Fridge Audit Timer Automatically (ID 1)
+      resetTimer(1);
+
+      document.getElementById('fridge1').value = '';
+      document.getElementById('freezer1').value = '';
+      alert("Temperature logged and Fridge Audit timer reset!");
     }
 
     // Audit Log Engine
@@ -410,7 +385,7 @@
       container.prepend(newEntry);
     }
 
-    // Barcode Lookup Function
+    // Barcode Fetching via Open Food Facts API
     async function fetchBarcodeData() {
       const code = document.getElementById('barcodeInput').value.trim();
       const lot = document.getElementById('lotInput').value.trim();
@@ -447,11 +422,45 @@
       }
     }
 
-    // Camera Capture Handler
-    function processBarcodeImage(event) {
-      const file = event.target.files[0];
-      if (file) {
-        alert("Camera opened and photo captured! Next step: connecting image reader to decode the barcode.");
+    // Live Camera Scanner Engine (HTML5-QRCode)
+    let html5QrCode = null;
+    let cameraActive = false;
+
+    function toggleCameraScanner() {
+      const scannerDiv = document.getElementById('interactive-scanner');
+      const btn = document.getElementById('btn-toggle-camera');
+
+      if (!cameraActive) {
+        scannerDiv.style.display = 'block';
+        btn.textContent = '❌ Close Camera Scanner';
+        html5QrCode = new Html5Qrcode("interactive-scanner");
+        
+        html5QrCode.start(
+          { facingMode: "environment" }, 
+          { fps: 10, qrbox: { width: 250, height: 150 } },
+          (decodedText) => {
+            document.getElementById('barcodeInput').value = decodedText;
+            toggleCameraScanner(); // Close scanner once barcode is captured
+            fetchBarcodeData();    // Auto fetch product data
+          },
+          (errorMessage) => { /* ignore frame scanning errors */ }
+        ).catch(err => {
+          alert("Unable to access camera. Please check browser permissions.");
+          scannerDiv.style.display = 'none';
+          btn.textContent = '📷 Open Live Camera Barcode Scanner';
+          cameraActive = false;
+        });
+
+        cameraActive = true;
+      } else {
+        if (html5QrCode) {
+          html5QrCode.stop().then(() => {
+            html5QrCode.clear();
+            scannerDiv.style.display = 'none';
+            btn.textContent = '📷 Open Live Camera Barcode Scanner';
+            cameraActive = false;
+          });
+        }
       }
     }
 
