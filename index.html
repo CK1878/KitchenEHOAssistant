@@ -9,6 +9,7 @@
       --primary: #1e293b;
       --accent: #d97706;
       --success: #16a34a;
+      --warning: #ca8a04;
       --danger: #dc2626;
       --bg: #f8fafc;
       --card-bg: #ffffff;
@@ -71,7 +72,7 @@
     }
     .card h2 { font-size: 1.1rem; color: var(--primary); margin-bottom: 12px; border-bottom: 2px solid var(--bg); padding-bottom: 6px; }
 
-    /* Form Inputs & Kitchen Buttons */
+    /* Inputs & Buttons */
     label { display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 4px; color: #475569; }
     input[type="text"], input[type="number"] {
       width: 100%;
@@ -107,20 +108,56 @@
     /* Temperature Inputs Grid */
     .temp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
 
-    /* Timers Grid */
-    .timer-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
-    .timer-card {
-      background: #f1f5f9;
-      border: 1px solid var(--border);
-      padding: 12px;
-      border-radius: 8px;
+    /* LIVE REPEATING TIMERS */
+    .timer-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+    .live-timer-card {
+      background: #ffffff;
+      border: 2px solid var(--border);
+      padding: 15px;
+      border-radius: 10px;
       text-align: center;
+      position: relative;
+      transition: all 0.3s ease;
     }
-    .timer-display { font-size: 1.6rem; font-weight: 800; font-family: monospace; color: var(--primary); margin: 6px 0; }
-    .timer-controls { display: flex; gap: 6px; }
-    .timer-btn { flex: 1; padding: 6px; border: none; border-radius: 4px; font-weight: 700; cursor: pointer; color: white; }
-    .btn-start { background: var(--success); }
-    .btn-reset { background: var(--danger); }
+    .live-timer-card.due-soon { border-color: var(--warning); background: #fffbeb; }
+    .live-timer-card.overdue { border-color: var(--danger); background: #fef2f2; animation: pulse 1.5s infinite; }
+    
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); }
+      70% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+    }
+
+    .timer-title { font-weight: 700; font-size: 0.95rem; color: var(--primary); }
+    .timer-subtitle { font-size: 0.75rem; color: #64748b; margin-bottom: 8px; }
+    .live-display { font-size: 2rem; font-weight: 800; font-family: monospace; color: var(--primary); margin: 6px 0; }
+    .live-timer-card.overdue .live-display { color: var(--danger); }
+    
+    .status-pill {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 12px;
+      margin-bottom: 10px;
+      background: #e2e8f0;
+      color: var(--primary);
+    }
+    .status-pill.ok { background: #dcfce7; color: var(--success); }
+    .status-pill.due { background: #fef9c3; color: var(--warning); }
+    .status-pill.alert { background: #fee2e2; color: var(--danger); }
+
+    .btn-reset-timer {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-weight: 700;
+      cursor: pointer;
+      width: 100%;
+    }
+    .btn-reset-timer:active { transform: scale(0.97); }
 
     /* Scanner & Inventory Tags */
     .stock-item {
@@ -129,9 +166,7 @@
       padding: 10px 12px;
       border-radius: 4px;
       margin-bottom: 8px;
-      border-top: 1px solid var(--border);
-      border-right: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
+      border: 1px solid var(--border);
     }
     .allergen-badge {
       display: inline-block;
@@ -158,7 +193,7 @@
     @media print {
       body { background: white; padding: 0; }
       header { background: none; color: black; border-bottom: 2px solid #000; }
-      .btn-pdf, .nav-tabs, .intake-form, .timer-controls { display: none !important; }
+      .btn-pdf, .nav-tabs, .intake-form, .btn-reset-timer { display: none !important; }
       .card { border: 1px solid #ccc; box-shadow: none; page-break-inside: avoid; }
     }
   </style>
@@ -177,7 +212,7 @@
   <!-- Navigation Tabs -->
   <div class="nav-tabs">
     <button class="tab-btn active" onclick="switchTab('sfbb')">📋 SFBB Checks & Temps</button>
-    <button class="tab-btn" onclick="switchTab('timers')">⏱️ SFBB Timers</button>
+    <button class="tab-btn" onclick="switchTab('timers')">⏱️ SFBB Live Timers</button>
     <button class="tab-btn" onclick="switchTab('pantry')">📦 Pantry & Allergens</button>
   </div>
 
@@ -229,40 +264,48 @@
     </div>
   </main>
 
-  <!-- TAB 2: SFBB TIMERS -->
+  <!-- TAB 2: LIVE REPEATING SFBB TIMERS -->
   <main id="tab-timers" style="display: none;">
     <div class="card">
-      <h2>⏱️ Kitchen Process Timers (Cooling / Baking)</h2>
+      <h2>⏱️ Continuous Running SFBB Rule Timers</h2>
+      <p style="font-size: 0.8rem; color: #64748b; margin-bottom: 12px;">These timers continuously run to remind you of routine SFBB compliance checks throughout the shift.</p>
+      
       <div class="timer-grid">
         
-        <!-- Timer 1: SFBB Rapid Cooling -->
-        <div class="timer-card">
-          <strong style="font-size: 0.9rem;">SFBB 90-Min Cooling</strong>
-          <div class="timer-display" id="display-1">90:00</div>
-          <div class="timer-controls">
-            <button class="timer-btn btn-start" onclick="toggleTimer(1, 5400)">Start</button>
-            <button class="timer-btn btn-reset" onclick="resetTimer(1, 5400)">Reset</button>
-          </div>
+        <!-- Timer 1: 4-Hour Fridge Temp Interval -->
+        <div class="live-timer-card" id="card-timer-1">
+          <div class="timer-title">Fridge Temp Check</div>
+          <div class="timer-subtitle">SFBB Rule: Every 4 Hours</div>
+          <div class="status-pill ok" id="pill-1">ACTIVE</div>
+          <div class="live-display" id="display-1">04:00:00</div>
+          <button class="btn-reset-timer" onclick="resetLiveTimer(1, 14400)">Logged & Reset (4h)</button>
         </div>
 
-        <!-- Timer 2: Bake Timer -->
-        <div class="timer-card">
-          <strong style="font-size: 0.9rem;">Sponge / Bake Timer</strong>
-          <div class="timer-display" id="display-2">45:00</div>
-          <div class="timer-controls">
-            <button class="timer-btn btn-start" onclick="toggleTimer(2, 2700)">Start</button>
-            <button class="timer-btn btn-reset" onclick="resetTimer(2, 2700)">Reset</button>
-          </div>
+        <!-- Timer 2: 2-Hour Sanitisation / Surface Wipedown -->
+        <div class="live-timer-card" id="card-timer-2">
+          <div class="timer-title">Surface Sanitisation</div>
+          <div class="timer-subtitle">SFBB Rule: Every 2 Hours</div>
+          <div class="status-pill ok" id="pill-2">ACTIVE</div>
+          <div class="live-display" id="display-2">02:00:00</div>
+          <button class="btn-reset-timer" onclick="resetLiveTimer(2, 7200)">Cleaned & Reset (2h)</button>
         </div>
 
-        <!-- Timer 3: Sanitizer Contact Time -->
-        <div class="timer-card">
-          <strong style="font-size: 0.9rem;">Sanitizer Contact (5m)</strong>
-          <div class="timer-display" id="display-3">05:00</div>
-          <div class="timer-controls">
-            <button class="timer-btn btn-start" onclick="toggleTimer(3, 300)">Start</button>
-            <button class="timer-btn btn-reset" onclick="resetTimer(3, 300)">Reset</button>
-          </div>
+        <!-- Timer 3: 90-Minute SFBB Cooling Check -->
+        <div class="live-timer-card" id="card-timer-3">
+          <div class="timer-title">SFBB 90-Min Cooling Limit</div>
+          <div class="timer-subtitle">Max core temp drop time</div>
+          <div class="status-pill ok" id="pill-3">ACTIVE</div>
+          <div class="live-display" id="display-3">01:30:00</div>
+          <button class="btn-reset-timer" onclick="resetLiveTimer(3, 5400)">Chilled & Reset (90m)</button>
+        </div>
+
+        <!-- Timer 4: 20-Minute Handwashing Reminder -->
+        <div class="live-timer-card" id="card-timer-4">
+          <div class="timer-title">Handwashing Interval</div>
+          <div class="timer-subtitle">Regular hygiene reset</div>
+          <div class="status-pill ok" id="pill-4">ACTIVE</div>
+          <div class="live-display" id="display-4">00:20:00</div>
+          <button class="btn-reset-timer" onclick="resetLiveTimer(4, 1200)">Washed & Reset (20m)</button>
         </div>
 
       </div>
@@ -321,48 +364,72 @@
       tempRecords.unshift(recordStr);
       document.getElementById('tempLogOutput').innerHTML = tempRecords.join('<br>');
       
+      // Auto-reset the live 4-Hour Fridge Check timer when temps are logged!
+      resetLiveTimer(1, 14400);
+
       // Clear Inputs
       document.getElementById('fridge1').value = '';
       document.getElementById('fridge2').value = '';
       document.getElementById('freezer1').value = '';
     }
 
-    // --- SFBB Kitchen Timers Logic ---
-    const timers = {};
-    function toggleTimer(id, defaultSeconds) {
-      if (!timers[id]) {
-        timers[id] = { remaining: defaultSeconds, interval: null };
-      }
+    // --- LIVE CONTINUOUS RUNNING SFBB TIMERS ---
+    const liveTimersConfig = {
+      1: { remaining: 14400, total: 14400 }, // 4 Hours
+      2: { remaining: 7200,  total: 7200  }, // 2 Hours
+      3: { remaining: 5400,  total: 5400  }, // 90 Mins
+      4: { remaining: 1200,  total: 1200  }  // 20 Mins
+    };
 
-      if (timers[id].interval) {
-        clearInterval(timers[id].interval);
-        timers[id].interval = null;
-      } else {
-        timers[id].interval = setInterval(() => {
-          if (timers[id].remaining > 0) {
-            timers[id].remaining--;
-            updateTimerDisplay(id);
-          } else {
-            clearInterval(timers[id].interval);
-            alert(`Timer #${id} Complete!`);
+    function startGlobalClock() {
+      setInterval(() => {
+        for (const id in liveTimersConfig) {
+          if (liveTimersConfig[id].remaining > 0) {
+            liveTimersConfig[id].remaining--;
           }
-        }, 1000);
+          renderLiveTimerUI(id);
+        }
+      }, 1000);
+    }
+
+    function renderLiveTimerUI(id) {
+      const t = liveTimersConfig[id];
+      const hrs = Math.floor(t.remaining / 3600).toString().padStart(2, '0');
+      const mins = Math.floor((t.remaining % 3600) / 60).toString().padStart(2, '0');
+      const secs = (t.remaining % 60).toString().padStart(2, '0');
+
+      const display = document.getElementById(`display-${id}`);
+      const card = document.getElementById(`card-timer-${id}`);
+      const pill = document.getElementById(`pill-${id}`);
+
+      if (display) {
+        display.innerText = `${hrs}:${mins}:${secs}`;
+      }
+
+      // Dynamic Visual Status Updates
+      if (t.remaining === 0) {
+        card.className = "live-timer-card overdue";
+        pill.className = "status-pill alert";
+        pill.innerText = "OVERDUE - ACTION REQUIRED";
+      } else if (t.remaining <= t.total * 0.15) { // Last 15% of time left
+        card.className = "live-timer-card due-soon";
+        pill.className = "status-pill due";
+        pill.innerText = "DUE SOON";
+      } else {
+        card.className = "live-timer-card";
+        pill.className = "status-pill ok";
+        pill.innerText = "RUNNING";
       }
     }
 
-    function resetTimer(id, defaultSeconds) {
-      if (timers[id] && timers[id].interval) {
-        clearInterval(timers[id].interval);
-      }
-      timers[id] = { remaining: defaultSeconds, interval: null };
-      updateTimerDisplay(id);
+    function resetLiveTimer(id, seconds) {
+      liveTimersConfig[id].remaining = seconds;
+      liveTimersConfig[id].total = seconds;
+      renderLiveTimerUI(id);
     }
 
-    function updateTimerDisplay(id) {
-      const mins = Math.floor(timers[id].remaining / 60).toString().padStart(2, '0');
-      const secs = (timers[id].remaining % 60).toString().padStart(2, '0');
-      document.getElementById(`display-${id}`).innerText = `${mins}:${secs}`;
-    }
+    // Initialize global continuous clock on load
+    startGlobalClock();
 
     // --- Barcode & Open Food Facts Allergen Logic ---
     const UK_14_ALLERGENS = [
