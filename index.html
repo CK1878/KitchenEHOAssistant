@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Cake Forge - Advanced Kitchen Hub</title>
+    <!-- HTML5 QR Code / Barcode Scanner Library -->
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <style>
         :root {
             --bg-dark: #121212;
@@ -87,10 +89,21 @@
         .btn-action { background-color: var(--brand-green); color: #000; border: none; padding: 10px 16px; font-weight: bold; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
         .btn-secondary { background-color: #444; color: #fff; border: none; padding: 10px 16px; font-weight: bold; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
 
+        /* CAMERA SCANNER VIEWPORT */
+        #interactive-scanner {
+            width: 100%;
+            max-width: 400px;
+            margin: 10px auto;
+            border: 2px dashed var(--brand-green);
+            border-radius: 8px;
+            overflow: hidden;
+            display: none;
+        }
+
         /* PRINT / EXPORT STYLES */
         @media print {
             body { background-color: #fff !important; color: #000 !important; font-size: 10pt; }
-            header, .mode-strip, .add-task-box, .btn-action, .btn-secondary, .btn-temp, .header-actions, .timer-controls, .add-task-row { display: none !important; }
+            header, .mode-strip, .add-task-box, .btn-action, .btn-secondary, .btn-temp, .header-actions, .timer-controls, .add-task-row, #interactive-scanner { display: none !important; }
             main { display: block !important; }
             .panel { background: #fff !important; color: #000 !important; border: 1px solid #ccc !important; margin-bottom: 15px; page-break-inside: avoid; }
             .panel-header h2 { color: #000 !important; }
@@ -216,7 +229,7 @@
             </div>
         </section>
 
-        <!-- OPENED GOODS & BARCODE TRACKER -->
+        <!-- OPENED GOODS & BARCODE TRACKER WITH CAMERA SCANNER -->
         <section class="panel">
             <div class="panel-header">
                 <h2>Opened Goods & Barcode Shelf-Life Tracker</h2>
@@ -224,10 +237,15 @@
 
             <div class="add-task-box">
                 <span style="font-size:0.75rem; font-weight:bold; color:var(--brand-green);">+ OPEN NEW INGREDIENT (Scan Barcode or Type Name)</span>
+                
+                <!-- Viewfinder Container for Mobile Camera -->
+                <div id="interactive-scanner"></div>
+
                 <div class="add-task-row">
-                    <input type="text" id="barcode-input" class="add-task-input" placeholder="Scan Barcode (EAN) or Type Name..." style="flex-grow:2;">
+                    <input type="text" id="barcode-input" class="add-task-input" placeholder="Scan Barcode or Type Name..." style="flex-grow:2;">
                     <input type="number" id="pao-months" class="add-task-input" placeholder="PAO (Months)" style="max-width:110px;" value="3">
-                    <button class="btn-action" onclick="processBarcodeEntry()">Log Opened Item</button>
+                    <button class="btn-secondary" id="btn-toggle-camera" onclick="toggleCameraScanner()">📷 Scan via Camera</button>
+                    <button class="btn-action" onclick="processBarcodeEntry()">Log Item</button>
                 </div>
             </div>
 
@@ -343,6 +361,9 @@
             ]
         };
 
+        let html5QrCode = null;
+        let isCameraActive = false;
+
         function setOperationalMode(newMode) {
             state.mode = newMode;
             document.querySelectorAll('.btn-mode').forEach(b => b.classList.remove('active'));
@@ -456,12 +477,63 @@
             saveToDisk();
         }
 
+        // AUTO-POPULATE PAO FROM PRESET DATABASE
         document.getElementById('barcode-input')?.addEventListener('input', (e) => {
             const val = e.target.value.trim();
             if (BARCODE_DB[val]) {
                 document.getElementById('pao-months').value = BARCODE_DB[val].defaultPaoMonths;
             }
         });
+
+        // MOBILE CAMERA SCANNER CONTROLS
+        function toggleCameraScanner() {
+            const scannerDiv = document.getElementById('interactive-scanner');
+            const btn = document.getElementById('btn-toggle-camera');
+
+            if (isCameraActive) {
+                stopCameraScanner();
+            } else {
+                scannerDiv.style.display = 'block';
+                btn.textContent = '❌ Stop Camera';
+                isCameraActive = true;
+
+                if (!html5QrCode) {
+                    html5QrCode = new Html5Qrcode("interactive-scanner");
+                }
+
+                const config = { fps: 10, qrbox: { width: 250, height: 150 } };
+                
+                html5QrCode.start(
+                    { facingMode: "environment" }, 
+                    config, 
+                    (decodedText) => {
+                        // Successful scan
+                        document.getElementById('barcode-input').value = decodedText;
+                        if (BARCODE_DB[decodedText]) {
+                            document.getElementById('pao-months').value = BARCODE_DB[decodedText].defaultPaoMonths;
+                        }
+                        stopCameraScanner();
+                        processBarcodeEntry(); // Auto-log on scan success
+                    },
+                    (errorMessage) => {
+                        // Frame scanning in progress (silent fail per frame)
+                    }
+                ).catch(err => {
+                    alert("Unable to access camera. Please verify camera permissions in your browser settings.");
+                    stopCameraScanner();
+                });
+            }
+        }
+
+        function stopCameraScanner() {
+            if (html5QrCode && isCameraActive) {
+                html5QrCode.stop().then(() => {
+                    document.getElementById('interactive-scanner').style.display = 'none';
+                    document.getElementById('btn-toggle-camera').textContent = '📷 Scan via Camera';
+                    isCameraActive = false;
+                }).catch(err => console.error(err));
+            }
+        }
 
         function processBarcodeEntry() {
             const inputVal = document.getElementById('barcode-input').value.trim();
@@ -477,7 +549,7 @@
                 barcodeStr = inputVal;
             } else if (/^\d+$/.test(inputVal)) {
                 barcodeStr = inputVal;
-                itemName = `Scanned Barcode (${inputVal})`;
+                itemName = `Scanned Item (${inputVal})`;
             }
 
             const openDate = new Date();
@@ -646,7 +718,6 @@
                 try {
                     const parsed = JSON.parse(stored);
                     if (parsed) {
-                        // Merge safely so array defaults remain intact
                         const defaultPre = state.preSessionChecklist;
                         const defaultClose = state.closingChecklist;
                         state = Object.assign(state, parsed);
