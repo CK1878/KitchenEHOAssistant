@@ -3,7 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kitchen Management & SFBB Hub</title>
+    <title>The Cake Forge - Kitchen Management & SFBB Hub</title>
+
+    <!-- Camera Barcode Reader Library -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
     <style>
         :root {
             --primary-color: #2c3e50;
@@ -31,13 +35,20 @@
         }
 
         header {
-            margin-bottom: 20px;
+            margin-bottom: 25px;
             text-align: center;
         }
 
         h1 {
             color: var(--primary-color);
             margin-bottom: 5px;
+            font-size: 2rem;
+        }
+
+        .tagline {
+            color: #666;
+            margin-top: 0;
+            font-style: italic;
         }
 
         .card {
@@ -54,6 +65,13 @@
             border-bottom: 2px solid var(--bg-color);
             padding-bottom: 10px;
             font-size: 1.25rem;
+        }
+
+        h3 {
+            color: var(--primary-color);
+            margin-top: 15px;
+            margin-bottom: 10px;
+            font-size: 1.05rem;
         }
 
         .btn {
@@ -75,7 +93,11 @@
             background-color: var(--danger-color);
         }
 
-        .add-task-input {
+        .btn-success {
+            background-color: var(--accent-color);
+        }
+
+        .input-field {
             padding: 8px 12px;
             border: 1px solid #ccc;
             border-radius: 4px;
@@ -123,17 +145,35 @@
             font-weight: bold;
             margin-left: 15px;
         }
+
+        .temp-row {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        #reader {
+            width: 100%;
+            max-width: 400px;
+            margin: 10px auto;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            overflow: hidden;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
+    <!-- BRANDING HEADER -->
     <header>
-        <h1>🍳 Kitchen Management & SFBB Hub</h1>
-        <p style="color:#666;">Safer Food Better Business & Pantry Tracking</p>
+        <h1>🎂 The Cake Forge</h1>
+        <p class="tagline">HACCP & SFBB Kitchen Management System</p>
     </header>
 
-    <!-- 1. FLEXIBLE TIMERS SECTION -->
+    <!-- 1. FLEXIBLE PROCESS TIMERS -->
     <div class="card">
         <h2>⏱️ Kitchen & Process Timers</h2>
         <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
@@ -144,16 +184,25 @@
         </div>
         
         <div id="active-timers-container" style="display: flex; flex-direction: column; gap: 10px;">
-            <!-- Timers render here -->
+            <!-- Active Timers Render Here -->
         </div>
     </div>
 
-    <!-- 2. OPENED GOODS & BARCODE TRACKER -->
+    <!-- 2. OPENED GOODS & BARCODE TRACKER WITH CAMERA SCANNER -->
     <div class="card">
         <h2>🏷️ Opened Goods & Barcode Tracker</h2>
+        <p style="font-size: 13px; color: #666; margin-top: -5px;">Scan ingredient barcodes using camera or hardware scanner. Product names fetch automatically online.</p>
+
+        <!-- Camera Scanner Toggle -->
+        <div style="margin-bottom: 15px;">
+            <button type="button" class="btn btn-success" id="camera-toggle-btn" onclick="toggleCameraScanner()">📷 Open Camera Scanner</button>
+            <div id="reader" style="display:none;"></div>
+        </div>
+
+        <!-- Manual or Hardware Barcode Entry -->
         <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
-            <input type="text" id="barcode-input" class="add-task-input" placeholder="Scan Barcode or Type Item Name..." style="flex:1; min-width: 220px;" onkeypress="if(event.key==='Enter') processBarcodeEntry()">
-            <input type="number" id="pao-months" class="add-task-input" placeholder="PAO (Months)" style="width:110px;" value="3">
+            <input type="text" id="barcode-input" class="input-field" placeholder="Scan Barcode or Type Item Name..." style="flex:1; min-width: 220px;" onkeypress="if(event.key==='Enter') processBarcodeEntry()">
+            <input type="number" id="pao-months" class="input-field" placeholder="PAO (Months)" style="width:110px;" value="3">
             <button type="button" class="btn" onclick="processBarcodeEntry()">Log Item</button>
         </div>
 
@@ -172,24 +221,44 @@
         </table>
     </div>
 
-    <!-- 3. DAILY SFBB CHECKLISTS -->
+    <!-- 3. TEMPERATURE LOGS (FRIDGES & CHILLERS) -->
+    <div class="card">
+        <h2>❄️ Fridge & Chiller Temperature Logs</h2>
+        <div class="temp-row">
+            <label style="min-width: 140px;"><strong>Main Kitchen Fridge:</strong></label>
+            <input type="number" id="temp-fridge-1" class="input-field" placeholder="°C" style="width: 80px;" step="0.1" onchange="saveToDisk()">
+            <span style="font-size: 13px; color: #666;">(Target: 1°C - 5°C, Max: 8°C)</span>
+        </div>
+        <div class="temp-row">
+            <label style="min-width: 140px;"><strong>Secondary / Prep Fridge:</strong></label>
+            <input type="number" id="temp-fridge-2" class="input-field" placeholder="°C" style="width: 80px;" step="0.1" onchange="saveToDisk()">
+            <span style="font-size: 13px; color: #666;">(Target: 1°C - 5°C, Max: 8°C)</span>
+        </div>
+        <div class="temp-row">
+            <label style="min-width: 140px;"><strong>Freezer Unit:</strong></label>
+            <input type="number" id="temp-freezer" class="input-field" placeholder="°C" style="width: 80px;" step="0.1" onchange="saveToDisk()">
+            <span style="font-size: 13px; color: #666;">(Target: -18°C or lower)</span>
+        </div>
+    </div>
+
+    <!-- 4. SFBB DAILY CHECKLISTS -->
     <div class="card">
         <h2>📋 SFBB Daily Opening & Closing Checks</h2>
         
         <h3>Opening Checks</h3>
         <div class="checkbox-group" id="opening-checks">
-            <label class="checkbox-label"><input type="checkbox" onchange="saveToDisk()"> Fridges and chillers running at safe temperatures (8°C or below)</label>
-            <label class="checkbox-label"><input type="checkbox" onchange="saveToDisk()"> Food preparation areas, surfaces, and equipment are clean and sanitized</label>
-            <label class="checkbox-label"><input type="checkbox" onchange="saveToDisk()"> Handwashing basin fully stocked with soap and fresh towels</label>
-            <label class="checkbox-label"><input type="checkbox" onchange="saveToDisk()"> No signs of pest activity</label>
+            <label class="checkbox-label"><input type="checkbox" id="chk-op-1" onchange="saveToDisk()"> Fridges and chillers running at safe temperatures (8°C or below)</label>
+            <label class="checkbox-label"><input type="checkbox" id="chk-op-2" onchange="saveToDisk()"> Food preparation areas, surfaces, and equipment are clean and sanitized</label>
+            <label class="checkbox-label"><input type="checkbox" id="chk-op-3" onchange="saveToDisk()"> Handwashing basin fully stocked with antibacterial soap and paper towels</label>
+            <label class="checkbox-label"><input type="checkbox" id="chk-op-4" onchange="saveToDisk()"> No signs of pest activity or damaged packaging</label>
         </div>
 
         <h3>Closing Checks</h3>
         <div class="checkbox-group" id="closing-checks">
-            <label class="checkbox-label"><input type="checkbox" onchange="saveToDisk()"> No food left out; all opened items covered, labeled, and dated</label>
-            <label class="checkbox-label"><input type="checkbox" onchange="saveToDisk()"> All work surfaces, equipment, and handles cleaned and disinfected</label>
-            <label class="checkbox-label"><input type="checkbox" onchange="saveToDisk()"> Waste bins emptied and area cleared</label>
-            <label class="checkbox-label"><input type="checkbox" onchange="saveToDisk()"> Final temperature checks logged</label>
+            <label class="checkbox-label"><input type="checkbox" id="chk-cl-1" onchange="saveToDisk()"> No food left out; all opened items covered, labeled, and dated</label>
+            <label class="checkbox-label"><input type="checkbox" id="chk-cl-2" onchange="saveToDisk()"> All work surfaces, equipment, mixers, and handles cleaned and disinfected</label>
+            <label class="checkbox-label"><input type="checkbox" id="chk-cl-3" onchange="saveToDisk()"> Waste bins emptied, bagged, and area cleared</label>
+            <label class="checkbox-label"><input type="checkbox" id="chk-cl-4" onchange="saveToDisk()"> Final fridge temperatures verified and recorded</label>
         </div>
     </div>
 </div>
@@ -199,8 +268,12 @@
 let state = {
     activeTimers: [],
     openedIngredients: [],
-    lastResetDate: new Date().toLocaleDateString('en-GB')
+    temps: { fridge1: '', fridge2: '', freezer: '' },
+    checks: {}
 };
+
+let html5QrCode = null;
+let isCameraActive = false;
 
 // ==========================================
 // INITIALIZATION & LOCAL STORAGE
@@ -215,20 +288,102 @@ function loadFromDisk() {
         }
     }
     
-    // Ensure lists exist
+    // Ensure arrays/objects exist
     if (!state.activeTimers) state.activeTimers = [];
     if (!state.openedIngredients) state.openedIngredients = [];
+    if (!state.temps) state.temps = { fridge1: '', fridge2: '', freezer: '' };
+    if (!state.checks) state.checks = {};
+
+    // Restore Temps
+    document.getElementById('temp-fridge-1').value = state.temps.fridge1 || '';
+    document.getElementById('temp-fridge-2').value = state.temps.fridge2 || '';
+    document.getElementById('temp-freezer').value = state.temps.freezer || '';
+
+    // Restore Checkboxes
+    for (let i = 1; i <= 4; i++) {
+        if (document.getElementById(`chk-op-${i}`)) {
+            document.getElementById(`chk-op-${i}`).checked = !!state.checks[`chk-op-${i}`];
+        }
+        if (document.getElementById(`chk-cl-${i}`)) {
+            document.getElementById(`chk-cl-${i}`).checked = !!state.checks[`chk-cl-${i}`];
+        }
+    }
 
     renderPantryLedger();
     renderTimers();
 }
 
 function saveToDisk() {
+    // Save Temps
+    state.temps = {
+        fridge1: document.getElementById('temp-fridge-1').value,
+        fridge2: document.getElementById('temp-fridge-2').value,
+        freezer: document.getElementById('temp-freezer').value
+    };
+
+    // Save Checkbox states
+    state.checks = {};
+    for (let i = 1; i <= 4; i++) {
+        const opChk = document.getElementById(`chk-op-${i}`);
+        const clChk = document.getElementById(`chk-cl-${i}`);
+        if (opChk) state.checks[`chk-op-${i}`] = opChk.checked;
+        if (clChk) state.checks[`chk-cl-${i}`] = clChk.checked;
+    }
+
     localStorage.setItem('sfbb_hub_state', JSON.stringify(state));
 }
 
 // ==========================================
-// 1. OPEN FOOD FACTS API & BARCODE SCANNER
+// 1. CAMERA BARCODE SCANNER LOGIC
+// ==========================================
+function toggleCameraScanner() {
+    const readerDiv = document.getElementById('reader');
+    const btn = document.getElementById('camera-toggle-btn');
+
+    if (isCameraActive) {
+        if (html5QrCode) {
+            html5QrCode.stop().then(() => {
+                readerDiv.style.display = 'none';
+                btn.innerText = '📷 Open Camera Scanner';
+                btn.className = 'btn btn-success';
+                isCameraActive = false;
+            }).catch(err => console.error("Error stopping scanner", err));
+        }
+    } else {
+        readerDiv.style.display = 'block';
+        btn.innerText = '⏹️ Stop Camera Scanner';
+        btn.className = 'btn btn-danger';
+        
+        if (!html5QrCode) {
+            html5QrCode = new Html5Qrcode("reader");
+        }
+
+        html5QrCode.start(
+            { facingMode: "environment" },
+            { fps: 10, qrbox: { width: 250, height: 150 } },
+            (decodedText) => {
+                // On Scan Success
+                document.getElementById('barcode-input').value = decodedText;
+                processBarcodeEntry();
+                toggleCameraScanner(); // Close scanner after successful read
+            },
+            (errorMessage) => {
+                // Ignore frame parse errors
+            }
+        ).catch(err => {
+            alert("Could not access camera: " + err);
+            readerDiv.style.display = 'none';
+            btn.innerText = '📷 Open Camera Scanner';
+            btn.className = 'btn btn-success';
+            isCameraActive = false;
+        });
+
+        isCameraActive = true;
+    }
+}
+
+// ==========================================
+// 2. OPEN FOOD FACTS API & BARCODE SCANNER
 // ==========================================
 async function processBarcodeEntry() {
     const inputVal = document.getElementById('barcode-input').value.trim();
@@ -239,7 +394,6 @@ async function processBarcodeEntry() {
     let itemName = inputVal;
     let barcodeStr = "Manual";
 
-    // 1. Check numeric barcode via Open Food Facts API
     if (/^\d+$/.test(inputVal)) {
         barcodeStr = inputVal;
         try {
@@ -250,7 +404,7 @@ async function processBarcodeEntry() {
                 const prod = data.product;
                 itemName = prod.product_name_en || prod.product_name || `Scanned Item (${inputVal})`;
 
-                // Smart Category PAO Fallbacks
+                // Smart PAO Category Fallbacks
                 const keywords = ((prod.categories_tags || []).join(' ') + ' ' + (prod.product_name || '')).toLowerCase();
                 
                 if (keywords.includes('chocolate') || keywords.includes('cocoa')) {
@@ -294,7 +448,7 @@ async function processBarcodeEntry() {
 }
 
 // ==========================================
-// 2. PANTRY LEDGER RENDERING & REMOVAL
+// 3. PANTRY LEDGER RENDERING & REMOVAL
 // ==========================================
 function renderPantryLedger() {
     const tbody = document.getElementById('opened-goods-tbody');
@@ -343,7 +497,7 @@ function escapeHtml(str) {
 }
 
 // ==========================================
-// 3. MULTI-TIMER SYSTEM
+// 4. MULTI-TIMER SYSTEM
 // ==========================================
 function addTimer(label, minutes) {
     const timer = {
@@ -439,7 +593,7 @@ function renderTimers() {
     });
 }
 
-// Boot up app on load
+// Boot up app on page load
 window.onload = loadFromDisk;
 </script>
 
