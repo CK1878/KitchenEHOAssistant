@@ -182,8 +182,8 @@
 
   <!-- Tab Switcher -->
   <div class="nav-header">
-    <button class="nav-tab active" onclick="switchTab('dashboard')">🎛️ Live Kitchen Dashboard</button>
-    <button class="nav-tab" onclick="switchTab('intake')">📦 Stock Intake & Barcode</button>
+    <button class="nav-tab active" onclick="switchTab(event, 'dashboard')">🎛️ Live Kitchen Dashboard</button>
+    <button class="nav-tab" onclick="switchTab(event, 'intake')">📦 Stock Intake & Barcode</button>
   </div>
 
   <!-- Header Section -->
@@ -271,13 +271,21 @@
   <main id="tab-intake" style="display: none;">
     <section class="card">
       <div class="card-title">Ingredient Intake & Open Food Facts Lookup</div>
-      <label for="barcodeInput">Barcode / EAN Code:</label>
-      <input type="text" id="barcodeInput" placeholder="Scan or type barcode...">
       
+      <label for="barcodeInput">Barcode / EAN Code:</label>
+      <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+        <input type="text" id="barcodeInput" placeholder="Scan or type barcode..." style="margin-bottom: 0;">
+        <button class="btn-action" style="width: auto; padding: 0 16px; background: var(--primary-blue); color: black;" onclick="fetchBarcodeData()">Lookup</button>
+      </div>
+
+      <!-- Camera Trigger Button -->
+      <label for="cameraFileInput" class="btn-action" style="display: block; text-align: center; background: #2563eb; cursor: pointer; margin-bottom: 10px;">
+        📷 Open Camera Scanner
+      </label>
+      <input type="file" id="cameraFileInput" accept="image/*" capture="environment" style="display: none;" onchange="processBarcodeImage(event)">
+
       <label for="lotInput">Supplier Lot / Batch Number:</label>
       <input type="text" id="lotInput" placeholder="e.g. L240731">
-
-      <button class="btn-action" onclick="fetchBarcodeData()">📷 Scan Barcode / Search Item</button>
     </section>
 
     <section class="card">
@@ -290,18 +298,17 @@
 
   <script>
     // Tab Navigation
-    function switchTab(tabId) {
+    function switchTab(evt, tabId) {
       document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
       document.getElementById('tab-dashboard').style.display = 'none';
       document.getElementById('tab-intake').style.display = 'none';
       
       if (tabId === 'dashboard') {
         document.getElementById('tab-dashboard').style.display = 'block';
-        event.target.classList.add('active');
       } else {
         document.getElementById('tab-intake').style.display = 'block';
-        event.target.classList.add('active');
       }
+      evt.target.classList.add('active');
     }
 
     // Live Clock Engine
@@ -341,10 +348,10 @@
 
     // Autonomous Timers Engine
     let timers = [
-      { id: 1, name: "Fridge Audit", duration: 43149, remaining: 40749 }, // 11:19:09
-      { id: 2, name: "Sanitisation", duration: 6378, remaining: 6378 },   // 01:46:18
-      { id: 3, name: "Oven / Bake", duration: 2700, remaining: 2700 },     // 00:45:00
-      { id: 4, name: "Bin Pull", duration: 13201, remaining: 13201 }       // 03:40:01
+      { id: 1, name: "Fridge Audit", duration: 43149, remaining: 40749 },
+      { id: 2, name: "Sanitisation", duration: 6378, remaining: 6378 },
+      { id: 3, name: "Oven / Bake", duration: 2700, remaining: 2700 },
+      { id: 4, name: "Bin Pull", duration: 13201, remaining: 13201 }
     ];
 
     setInterval(() => {
@@ -356,6 +363,7 @@
 
     function renderTimers() {
       const container = document.getElementById('timerGrid');
+      if (!container) return;
       container.innerHTML = timers.map(t => {
         const hrs = Math.floor(t.remaining / 3600).toString().padStart(2, '0');
         const mins = Math.floor((t.remaining % 3600) / 60).toString().padStart(2, '0');
@@ -395,17 +403,22 @@
     // Audit Log Engine
     function logAudit(msg) {
       const container = document.getElementById('auditLog');
+      if (!container) return;
       const time = new Date().toLocaleTimeString([], { hour12: false });
       const newEntry = document.createElement('div');
       newEntry.innerHTML = `[${time}] ${msg}`;
       container.prepend(newEntry);
     }
 
-    // Barcode Fetching
+    // Barcode Lookup Function
     async function fetchBarcodeData() {
       const code = document.getElementById('barcodeInput').value.trim();
       const lot = document.getElementById('lotInput').value.trim();
-      if (!code) return alert("Please enter or scan a barcode.");
+      
+      if (!code) {
+        alert("Please enter or scan a barcode number first.");
+        return;
+      }
 
       try {
         const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${code}.json`);
@@ -414,17 +427,31 @@
         if (data.status === 1) {
           const name = data.product.product_name || "Unknown Item";
           logAudit(`Stock Scanned: ${name} (Lot: ${lot || 'N/A'})`);
-          document.getElementById('pantryLog').innerHTML = `
+          
+          const pantryLog = document.getElementById('pantryLog');
+          const entry = `
             <div style="background: var(--card-inner); padding: 10px; border-radius: 8px; margin-top: 8px; color: var(--text-main);">
               <strong>${name}</strong><br>
               <span style="font-size:0.75rem; color: var(--text-muted);">Lot: ${lot || 'N/A'} | Date: ${new Date().toLocaleDateString('en-GB')}</span>
             </div>
-          ` + document.getElementById('pantryLog').innerHTML;
+          `;
+          pantryLog.innerHTML = entry + (pantryLog.innerHTML.includes('No items scanned') ? '' : pantryLog.innerHTML);
+          
+          document.getElementById('barcodeInput').value = '';
+          document.getElementById('lotInput').value = '';
         } else {
-          alert("Barcode not found in database.");
+          alert("Barcode not found in Open Food Facts database.");
         }
       } catch (e) {
         alert("Error connecting to barcode database.");
+      }
+    }
+
+    // Camera Capture Handler
+    function processBarcodeImage(event) {
+      const file = event.target.files[0];
+      if (file) {
+        alert("Camera opened and photo captured! Next step: connecting image reader to decode the barcode.");
       }
     }
 
