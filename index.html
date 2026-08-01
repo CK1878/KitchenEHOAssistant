@@ -91,10 +91,24 @@
 
         #camera-scanner-view { width: 100%; max-width: 400px; margin: 8px 0; border-radius: 6px; overflow: hidden; border: 2px solid var(--brand-green); display: none; }
 
+        .ingredient-tag { display: inline-block; background: #333; color: var(--brand-green); font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; margin: 2px 2px 2px 0; border: 1px solid #444; }
+
+        /* ALLERGEN TOGGLE CHIPS */
+        .allergen-chip-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+        .allergen-chip { background: #121212; color: var(--text-muted); border: 1px solid var(--border); padding: 4px 10px; font-size: 0.75rem; border-radius: 12px; cursor: pointer; user-select: none; }
+        .allergen-chip.selected { background: var(--alert-red); color: white; border-color: var(--alert-red); font-weight: bold; }
+
+        /* MODAL OVERLAY STYLES */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 15px; }
+        .modal-card { background: var(--surface); border: 2px solid var(--brand-green); border-radius: 8px; width: 100%; max-width: 500px; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+        .modal-card h3 { color: var(--brand-green); font-size: 1.1rem; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+        .modal-form-group { display: flex; flex-direction: column; gap: 4px; }
+        .modal-form-group label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: bold; }
+
         /* PRINT / EXPORT STYLES */
         @media print {
             body { background-color: #fff !important; color: #000 !important; font-size: 10pt; }
-            header, .mode-strip, .add-task-box, .btn-action, .btn-secondary, .btn-temp, .header-actions, .timer-controls, .add-task-row { display: none !important; }
+            header, .mode-strip, .add-task-box, .btn-action, .btn-secondary, .btn-temp, .header-actions, .timer-controls, .add-task-row, .modal-overlay { display: none !important; }
             main { display: block !important; }
             .panel { background: #fff !important; color: #000 !important; border: 1px solid #ccc !important; margin-bottom: 15px; page-break-inside: avoid; }
             .panel-header h2 { color: #000 !important; }
@@ -230,8 +244,7 @@
                 <span style="font-size:0.75rem; font-weight:bold; color:var(--brand-green);">+ OPEN NEW INGREDIENT (Scan Barcode or Type Name)</span>
                 <div class="add-task-row">
                     <input type="text" id="barcode-input" class="add-task-input" placeholder="Scan Barcode (EAN) or Type Name..." style="flex-grow:2;">
-                    <input type="number" id="pao-months" class="add-task-input" placeholder="PAO (Months)" style="max-width:110px;" value="3">
-                    <button class="btn-action" onclick="processBarcodeEntry()">Log Opened Item</button>
+                    <button class="btn-action" onclick="fetchAndReviewProduct()">Scan & Review</button>
                     <button class="btn-secondary" id="btn-cam-toggle" onclick="toggleCameraScanner()">📷 Camera</button>
                 </div>
                 <div id="camera-scanner-view"></div>
@@ -254,16 +267,16 @@
             </div>
         </section>
 
-        <!-- BATCH PRODUCTION LOG -->
+        <!-- BATCH PRODUCTION LOG WITH TRACEABILITY -->
         <section class="panel">
             <div class="panel-header">
-                <h2>Cooked / Made Batch Records</h2>
+                <h2>Cooked / Made Batch Records (Traceability)</h2>
             </div>
 
             <div class="add-task-box">
                 <span style="font-size:0.75rem; font-weight:bold; color:var(--brand-green);">+ LOG NEW BATCH (Sponges / Ganache / Fillings)</span>
                 <div class="add-task-row">
-                    <input type="text" id="batch-item" class="add-task-input" placeholder="e.g., Chocolate Ganache / Victoria Sponge">
+                    <input type="text" id="batch-item" class="add-task-input" placeholder="e.g., Vanilla Sponge / Ganache">
                     <input type="text" id="batch-code" class="add-task-input" placeholder="Batch ID / Lot #" style="max-width:110px;">
                     <input type="text" id="batch-temp" class="add-task-input" placeholder="Core Temp (°C)" style="max-width:100px;">
                     <select id="batch-storage" class="add-task-select">
@@ -271,7 +284,19 @@
                         <option value="Fridge">Fridge</option>
                         <option value="Freezer">Freezer</option>
                     </select>
-                    <button class="btn-action" onclick="logNewBatch()">Log</button>
+                </div>
+                
+                <div style="margin-top: 4px;">
+                    <label style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:4px;">
+                        Linked Opened Ingredients (Hold Ctrl/Cmd to select multiple):
+                    </label>
+                    <select id="batch-ingredients-select" multiple class="add-task-select" style="width:100%; height:70px; background:#121212;">
+                        <option disabled style="color:#666;">No opened goods logged yet</option>
+                    </select>
+                </div>
+
+                <div style="text-align:right; margin-top:4px;">
+                    <button class="btn-action" onclick="logNewBatch()">Log Traceable Batch</button>
                 </div>
             </div>
 
@@ -282,6 +307,7 @@
                             <th>Time</th>
                             <th>Item Description</th>
                             <th>Batch ID</th>
+                            <th>Used Ingredients (Traced)</th>
                             <th>Core Temp</th>
                             <th>Storage</th>
                         </tr>
@@ -310,12 +336,51 @@
         </section>
     </main>
 
+    <!-- PRODUCT REVIEW & EDIT MODAL -->
+    <div class="modal-overlay" id="product-modal" style="display: none;">
+        <div class="modal-card">
+            <h3>Review / Edit Product Details</h3>
+            
+            <div class="modal-form-group">
+                <label>Product Name</label>
+                <input type="text" id="modal-name" class="add-task-input" placeholder="e.g., Two Chicks Pasteurised Egg Whites">
+            </div>
+
+            <div class="modal-form-group">
+                <label>Barcode / EAN</label>
+                <input type="text" id="modal-code" class="add-task-input">
+            </div>
+
+            <div class="modal-form-group">
+                <label>Period After Opening (PAO Months)</label>
+                <input type="number" id="modal-pao" class="add-task-input" value="3" style="max-width: 120px;">
+            </div>
+
+            <div class="modal-form-group">
+                <label>Flagged Allergens (Click to Toggle)</label>
+                <div class="allergen-chip-grid" id="modal-allergen-grid"></div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px;">
+                <button class="btn-secondary" onclick="closeProductModal()">Cancel</button>
+                <button class="btn-action" onclick="saveProductFromModal()">Confirm & Save to Opened Ledger</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const BARCODE_DB = {
             "5010029000148": { name: "Self Raising Flour 1.5kg", defaultPaoMonths: 3, allergens: ["Gluten"] },
-            "5000128001234": { name: "Callebaut 811 Dark Callets", defaultPaoMonths: 12, allergens: ["Soya", "Milk (Trace)"] },
+            "5000128001234": { name: "Callebaut 811 Dark Callets", defaultPaoMonths: 12, allergens: ["Soya", "Milk"] },
             "5010011000010": { name: "Icing Sugar 1kg", defaultPaoMonths: 6, allergens: [] }
         };
+
+        const ALLERGEN_LIST = [
+            "Eggs", "Milk", "Gluten", "Soya", "Nuts", "Peanuts", "Sesame", 
+            "Celery", "Mustard", "Lupin", "Sulphites", "Fish", "Crustaceans", "Molluscs"
+        ];
+
+        let modalSelectedAllergens = new Set();
 
         let state = {
             mode: "STANDARD",
@@ -362,7 +427,7 @@
         setInterval(updateClock, 1000);
         updateClock();
 
-        // Dynamic Operational Mode Switcher with Auto-Adjusting Timers
+        // Operational Mode Switcher
         function setOperationalMode(mode) {
             state.mode = mode;
             document.querySelectorAll('.btn-mode').forEach(b => b.classList.remove('active'));
@@ -378,7 +443,6 @@
                 state.intervals = { fridge: 4, sanitize: 1, waste: 2 };
             }
 
-            // Dynamically recalculate active intervals immediately
             state.timers.fridge = state.intervals.fridge * 3600;
             state.timers.sanitize = state.intervals.sanitize * 3600;
             state.timers.waste = state.intervals.waste * 3600;
@@ -471,51 +535,105 @@
             `).join('');
         }
 
-        // Opened Goods & Barcode Tracker
-        async function processBarcodeEntry() {
+        // FETCH PRODUCT & OPEN EDIT MODAL
+        async function fetchAndReviewProduct() {
             const input = document.getElementById('barcode-input').value.trim();
-            const pao = parseInt(document.getElementById('pao-months').value) || 3;
             if (!input) return alert("Please scan or enter product name/EAN code.");
 
             let name = input;
             let code = input;
-            let allergens = [];
+            let pao = 3;
+            modalSelectedAllergens.clear();
 
+            // Local DB Lookup
             if (BARCODE_DB[input]) {
                 name = BARCODE_DB[input].name;
-                allergens = BARCODE_DB[input].allergens || [];
-            } else if (/^\d+$/.test(input)) {
+                pao = BARCODE_DB[input].defaultPaoMonths || 3;
+                (BARCODE_DB[input].allergens || []).forEach(a => modalSelectedAllergens.add(a));
+            } 
+            // Remote OpenFoodFacts API Lookup
+            else if (/^\d+$/.test(input)) {
                 try {
                     const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${input}.json`);
                     const data = await res.json();
                     if (data.status === 1) {
                         name = data.product.product_name || `Item ${input}`;
                         
-                        // Auto-detect allergens from OpenFoodFacts if present
                         const tags = data.product.allergens_tags || [];
                         tags.forEach(t => {
                             const cleanTag = t.replace('en:', '').replace(/-/g, ' ');
-                            allergens.push(cleanTag.charAt(0).toUpperCase() + cleanTag.slice(1));
+                            const capitalized = cleanTag.charAt(0).toUpperCase() + cleanTag.slice(1);
+                            modalSelectedAllergens.add(capitalized);
                         });
                     }
                 } catch(e) {}
             }
 
+            // Auto-detect common allergen keywords in the title if API missed it (e.g., Egg Whites -> Eggs)
+            const lowerName = name.toLowerCase();
+            if (lowerName.includes("egg")) modalSelectedAllergens.add("Eggs");
+            if (lowerName.includes("milk") || lowerName.includes("butter") || lowerName.includes("cream")) modalSelectedAllergens.add("Milk");
+            if (lowerName.includes("flour") || lowerName.includes("wheat")) modalSelectedAllergens.add("Gluten");
+
+            // Open Modal with Pre-filled values
+            document.getElementById('modal-name').value = name;
+            document.getElementById('modal-code').value = code;
+            document.getElementById('modal-pao').value = pao;
+            
+            renderAllergenChips();
+            document.getElementById('product-modal').style.display = 'flex';
+        }
+
+        function renderAllergenChips() {
+            const grid = document.getElementById('modal-allergen-grid');
+            grid.innerHTML = ALLERGEN_LIST.map(allergen => {
+                const isSelected = modalSelectedAllergens.has(allergen);
+                return `
+                    <div class="allergen-chip ${isSelected ? 'selected' : ''}" onclick="toggleModalAllergen('${allergen}')">
+                        ${allergen}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function toggleModalAllergen(allergen) {
+            if (modalSelectedAllergens.has(allergen)) {
+                modalSelectedAllergens.delete(allergen);
+            } else {
+                modalSelectedAllergens.add(allergen);
+            }
+            renderAllergenChips();
+        }
+
+        function saveProductFromModal() {
+            const name = document.getElementById('modal-name').value.trim() || "Unspecified Product";
+            const code = document.getElementById('modal-code').value.trim() || "N/A";
+            const pao = parseInt(document.getElementById('modal-pao').value) || 3;
+
             const now = new Date();
             const exp = new Date(now);
             exp.setMonth(exp.getMonth() + pao);
 
-            state.openedIngredients.unshift({
+            const newItem = {
+                id: Date.now(),
                 opened: now.toLocaleDateString('en-GB'),
                 name: name,
                 code: code,
                 expiry: exp.toLocaleDateString('en-GB'),
-                allergens: allergens,
+                allergens: Array.from(modalSelectedAllergens),
                 status: 'OK'
-            });
+            };
+
+            state.openedIngredients.unshift(newItem);
 
             document.getElementById('barcode-input').value = '';
+            closeProductModal();
             renderPantryLog();
+            updateIngredientDropdown();
+        }
+
+        function closeProductModal() {
+            document.getElementById('product-modal').style.display = 'none';
         }
 
         function renderPantryLog() {
@@ -538,6 +656,18 @@
             }).join('');
         }
 
+        function updateIngredientDropdown() {
+            const select = document.getElementById('batch-ingredients-select');
+            if (state.openedIngredients.length === 0) {
+                select.innerHTML = '<option disabled style="color:#666;">No opened goods logged yet</option>';
+                return;
+            }
+
+            select.innerHTML = state.openedIngredients.map(ing => `
+                <option value="${ing.name} (${ing.code})">${ing.name} [Opened: ${ing.opened}]</option>
+            `).join('');
+        }
+
         // Camera Scanner Integration
         let html5QrCode = null;
         let camActive = false;
@@ -556,7 +686,7 @@
                     (decodedText) => {
                         document.getElementById('barcode-input').value = decodedText;
                         toggleCameraScanner();
-                        processBarcodeEntry();
+                        fetchAndReviewProduct();
                     },
                     (err) => {}
                 ).catch(() => {
@@ -578,32 +708,52 @@
             }
         }
 
-        // Batch Records Logging
+        // Batch Records Logging with Full Traceability
         function logNewBatch() {
             const item = document.getElementById('batch-item').value.trim();
             const code = document.getElementById('batch-code').value.trim();
             const temp = document.getElementById('batch-temp').value.trim();
             const storage = document.getElementById('batch-storage').value;
+            
+            const select = document.getElementById('batch-ingredients-select');
+            const selectedIngredients = Array.from(select.selectedOptions)
+                .filter(opt => !opt.disabled)
+                .map(opt => opt.value);
 
-            if (!item) return alert("Please describe the batch item.");
+            if (!item) return alert("Please describe the batch item (e.g., Vanilla Sponge).");
 
             const time = new Date().toLocaleTimeString([], { hour12: false });
-            state.batches.unshift({ time, item, code: code || 'N/A', temp: temp ? `${temp}°C` : 'N/A', storage });
+            state.batches.unshift({ 
+                time, 
+                item, 
+                code: code || 'N/A', 
+                temp: temp ? `${temp}°C` : 'N/A', 
+                storage,
+                usedIngredients: selectedIngredients 
+            });
 
             document.getElementById('batch-item').value = '';
             document.getElementById('batch-code').value = '';
             document.getElementById('batch-temp').value = '';
+            select.selectedIndex = -1;
 
             const tbody = document.getElementById('batch-log-body');
-            tbody.innerHTML = state.batches.map(b => `
-                <tr>
-                    <td><strong>${b.time}</strong></td>
-                    <td>${b.item}</td>
-                    <td><code>${b.code}</code></td>
-                    <td>${b.temp}</td>
-                    <td>${b.storage}</td>
-                </tr>
-            `).join('');
+            tbody.innerHTML = state.batches.map(b => {
+                const ingTags = b.usedIngredients.length > 0
+                    ? b.usedIngredients.map(ing => `<span class="ingredient-tag">${ing}</span>`).join('')
+                    : '<span style="color:var(--text-muted); font-size:0.75rem;">None Linked</span>';
+
+                return `
+                    <tr>
+                        <td><strong>${b.time}</strong></td>
+                        <td><strong>${b.item}</strong></td>
+                        <td><code>${b.code}</code></td>
+                        <td>${ingTags}</td>
+                        <td>${b.temp}</td>
+                        <td>${b.storage}</td>
+                    </tr>
+                `;
+            }).join('');
         }
 
         // Dynamic Checklists
@@ -681,6 +831,7 @@
         logRoutineAction("System Initialized. Standard SFBB Monitoring active.");
         renderChecklists();
         renderTimers();
+        updateIngredientDropdown();
     </script>
 </body>
 </html>
